@@ -1,0 +1,332 @@
+/* ===== Welcome Page ===== */
+
+.welcome {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-hero);
+  overflow: hidden;
+}
+
+/* Floating particles */
+.particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.particle {
+  position: absolute;
+  bottom: -10px;
+  border-radius: 50%;
+  background: var(--purple-400);
+  animation: particle-drift linear infinite;
+}
+
+/* Breathing orbs — logo colors */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: breathe 6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orb-1 {
+  width: 300px;
+  height: 300px;
+  background: var(--coral-300);
+  top: -80px;
+  right: -60px;
+  opacity: 0.35;
+}
+
+.orb-2 {
+  width: 250px;
+  height: 250px;
+  background: var(--teal-300);
+  bottom: -40px;
+  left: -60px;
+  opacity: 0.3;
+  animation-delay: 2s;
+}
+
+.orb-3 {
+  width: 180px;
+  height: 180px;
+  background: var(--purple-300);
+  top: 40%;
+  left: 60%;
+  opacity: 0.2;
+  animation-delay: 4s;
+}
+
+/* Content */
+.welcome-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: var(--space-xl);
+  max-width: 480px;
+  width: 100%;
+}
+
+.welcome-splash,
+.welcome-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+/* Logo */
+.welcome-logo-wrap {
+  width: 140px;
+  height: 140px;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(145deg,
+    rgba(255, 255, 255, 0.65),
+    rgba(250, 245, 247, 0.55),
+    rgba(245, 240, 250, 0.55));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(107, 77, 138, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: logo-entrance 1s var(--ease-spring) forwards,
+             float 4s ease-in-out 1s infinite,
+             logo-ring-pulse 3s ease-in-out 1.5s infinite;
+  margin-bottom: var(--space-md);
+  box-shadow: 0 8px 32px rgba(107, 77, 138, 0.12),
+              0 0 0 0 rgba(107, 77, 138, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Shimmer sweep on the logo container */
+.welcome-logo-wrap::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0.35) 55%,
+    transparent 70%
+  );
+  animation: logo-shimmer 4s ease-in-out 2s infinite;
+  pointer-events: none;
+}
+
+.welcome-logo-small {
+  width: 90px;
+  height: 90px;
+}
+
+.welcome-logo-img {
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  filter: drop-shadow(0 2px 8px rgba(107, 77, 138, 0.15));
+  transition: transform var(--duration-normal) var(--ease-spring);
+}
+
+.welcome-logo-wrap:hover .welcome-logo-img {
+  transform: scale(1.05);
+}
+
+/* Typography */
+.welcome-title {
+  font-size: 3rem;
+  font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  animation: slideUp var(--duration-slow) var(--ease-out) forwards,
+             title-glow 3s ease-in-out 1.5s infinite alternate;
+}
+
+.welcome-tagline {
+  font-size: 1.15rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.welcome-sub {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  max-width: 340px;
+  line-height: 1.7;
+}
+
+/* Button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 14px 36px;
+  background: var(--gradient-btn);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  transition: all var(--duration-normal) var(--ease-out);
+  margin-top: var(--space-md);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated shine sweep across buttons */
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.25),
+    transparent
+  );
+  animation: btn-shine 3s ease-in-out 2s infinite;
+}
+
+.btn-primary:hover {
+  background: var(--gradient-btn-hover);
+  box-shadow: var(--shadow-xl), 0 0 30px rgba(107, 77, 138, 0.25);
+  transform: translateY(-3px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-arrow {
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.btn-primary:hover .btn-arrow {
+  transform: translateX(6px);
+}
+
+/* Form step */
+.welcome-wave {
+  font-size: 3rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.welcome-form-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.welcome-form-sub {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.welcome-input {
+  width: 100%;
+  max-width: 320px;
+  padding: 14px 20px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  border: 2px solid var(--purple-200);
+  border-radius: var(--radius-xl);
+  font-size: 1rem;
+  color: var(--text-primary);
+  text-align: center;
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.welcome-input::placeholder {
+  color: var(--text-muted);
+}
+
+.welcome-input:focus {
+  border-color: var(--purple-400);
+  box-shadow: 0 0 0 4px rgba(107, 77, 138, 0.15),
+              0 8px 32px rgba(107, 77, 138, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  transform: scale(1.02);
+}
+
+/* ===== Welcome-specific Keyframes ===== */
+
+@keyframes logo-entrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-15deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.1) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes logo-ring-pulse {
+  0%, 100% {
+    box-shadow: 0 8px 32px rgba(107, 77, 138, 0.15),
+                0 0 0 0 rgba(107, 77, 138, 0.25);
+  }
+  50% {
+    box-shadow: 0 8px 32px rgba(107, 77, 138, 0.2),
+                0 0 0 12px rgba(107, 77, 138, 0);
+  }
+}
+
+@keyframes logo-shimmer {
+  0%, 100% { transform: translateX(-100%) rotate(0); }
+  50% { transform: translateX(100%) rotate(0); }
+}
+
+@keyframes title-glow {
+  0% { filter: drop-shadow(0 0 0 transparent); }
+  100% { filter: drop-shadow(0 0 20px rgba(107, 77, 138, 0.15)); }
+}
+
+@keyframes btn-shine {
+  0% { left: -100%; }
+  50% { left: 150%; }
+  100% { left: 150%; }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .welcome-title {
+    font-size: 2.2rem;
+  }
+
+  .welcome-logo-wrap {
+    width: 110px;
+    height: 110px;
+  }
+
+  .welcome-logo-small {
+    width: 72px;
+    height: 72px;
+  }
+}

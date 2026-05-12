@@ -1,0 +1,305 @@
+/* ===== MindNest Design System ===== */
+/* Colors derived from the MindNest logo:
+   Coral/peach, dusty rose, deep purple, teal/seafoam, soft lavender */
+
+:root {
+  /* Core palette — Logo-inspired */
+  --bg-primary: #faf5f7;
+  --bg-secondary: #f3ecf0;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fdf9fb;
+
+  /* Purple tones (brain & nest from logo) */
+  --purple-50: #f5f0fa;
+  --purple-100: #ebe0f5;
+  --purple-200: #d5c0e8;
+  --purple-300: #b8a0d0;
+  --purple-400: #9b7bbd;
+  --purple-500: #7b5ea7;
+  --purple-600: #6b4d8a;
+  --purple-700: #553c70;
+
+  /* Coral/Rose tones (arc & leaves from logo) */
+  --coral-50: #fef2f0;
+  --coral-100: #fde4e0;
+  --coral-200: #f5c4be;
+  --coral-300: #e8a4a4;
+  --coral-400: #d88c94;
+  --coral-500: #c87da0;
+  --coral-600: #b06080;
+  --coral-700: #8e4060;
+
+  /* Teal/Seafoam tones (leaves & text from logo) */
+  --teal-50: #eef9f6;
+  --teal-100: #d1f0e8;
+  --teal-200: #a3e2d4;
+  --teal-300: #6dd0bc;
+  --teal-400: #4db8a4;
+  --teal-500: #3a9d8c;
+  --teal-600: #2d7e70;
+  --teal-700: #1f5f54;
+
+  /* Lavender tones (sparkles & transitions from logo) */
+  --lavender-50: #f5f3ff;
+  --lavender-100: #ede9fe;
+  --lavender-200: #ddd6fe;
+  --lavender-300: #c4b5fd;
+  --lavender-400: #a78bfa;
+  --lavender-500: #8b5cf6;
+  --lavender-600: #7c3aed;
+  --lavender-700: #6d28d9;
+
+  /* Kept for status badges */
+  --mint-100: #d1fae5;
+  --mint-200: #a7f3d0;
+  --mint-300: #6ee7b7;
+  --mint-400: #34d399;
+  --mint-500: #10b981;
+
+  --rose-100: #ffe4e6;
+  --rose-300: #fda4af;
+  --rose-400: #fb7185;
+
+  --amber-100: #fef3c7;
+  --amber-300: #fcd34d;
+  --amber-400: #fbbf24;
+
+  --sky-100: #e0f2fe;
+  --sky-300: #7dd3fc;
+  --sky-400: #38bdf8;
+
+  /* Text */
+  --text-primary: #3d2b52;
+  --text-secondary: #5e4a6e;
+  --text-muted: #9a8ba8;
+  --text-on-gradient: #ffffff;
+
+  /* Gradients — logo-inspired */
+  --gradient-primary: linear-gradient(135deg, #c87da0 0%, #7b5ea7 40%, #4db8a4 100%);
+  --gradient-warm: linear-gradient(135deg, #e8a4a4 0%, #c87da0 30%, #7b5ea7 65%, #4db8a4 100%);
+  --gradient-hero: linear-gradient(160deg, #fef2f0 0%, #f5f0fa 40%, #eef9f6 100%);
+  --gradient-card: linear-gradient(145deg, #ffffff 0%, #f5f0fa 100%);
+  --gradient-btn: linear-gradient(135deg, #7b5ea7 0%, #6b4d8a 100%);
+  --gradient-btn-hover: linear-gradient(135deg, #6b4d8a 0%, #553c70 100%);
+
+  /* Shadows — using logo purple tones */
+  --shadow-sm: 0 1px 3px rgba(107, 77, 138, 0.06);
+  --shadow-md: 0 4px 16px rgba(107, 77, 138, 0.08);
+  --shadow-lg: 0 8px 32px rgba(107, 77, 138, 0.12);
+  --shadow-xl: 0 16px 48px rgba(107, 77, 138, 0.16);
+  --shadow-glow: 0 0 40px rgba(107, 77, 138, 0.20);
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --duration-fast: 0.15s;
+  --duration-normal: 0.3s;
+  --duration-slow: 0.5s;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  /* Typography */
+  --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ===== Reset & Base ===== */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input,
+textarea {
+  font-family: var(--font-family);
+  border: none;
+  outline: none;
+}
+
+/* ===== Utility Classes ===== */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.fade-in {
+  animation: fadeIn var(--duration-slow) var(--ease-out) forwards;
+}
+
+.slide-up {
+  animation: slideUp var(--duration-slow) var(--ease-out) forwards;
+}
+
+.scale-in {
+  animation: scaleIn var(--duration-normal) var(--ease-spring) forwards;
+}
+
+/* Stagger helper */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.10s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.20s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.30s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.40s; }
+
+/* ===== Keyframes ===== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.5); }
+  70% { transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+}
+
+@keyframes gentle-sway {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(4px) rotate(1deg); }
+  75% { transform: translateX(-4px) rotate(-1deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(107, 77, 138, 0.15); }
+  50% { box-shadow: 0 0 40px rgba(107, 77, 138, 0.3); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes particle-drift {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) translateX(50px) scale(0); opacity: 0; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes ripple {
+  0% { box-shadow: 0 0 0 0 rgba(107, 77, 138, 0.3); }
+  100% { box-shadow: 0 0 0 20px rgba(107, 77, 138, 0); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes rotate-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--purple-300);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--purple-400);
+}
+
+/* ===== Selection ===== */
+::selection {
+  background: var(--purple-200);
+  color: var(--purple-700);
+}

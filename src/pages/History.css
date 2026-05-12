@@ -1,0 +1,238 @@
+/* ===== History Page ===== */
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Page header */
+.page-header {
+  text-align: center;
+  padding: var(--space-md) 0;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.page-sub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: var(--space-xs);
+}
+
+/* Filter chips */
+.filter-chips {
+  display: flex;
+  gap: var(--space-sm);
+  overflow-x: auto;
+  padding-bottom: var(--space-xs);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.filter-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex-shrink: 0;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--duration-normal) var(--ease-out);
+  border: 1.5px solid transparent;
+}
+
+.chip:hover {
+  border-color: var(--purple-200);
+  background: var(--purple-50);
+  transform: translateY(-2px);
+}
+
+.chip.active {
+  background: var(--purple-500);
+  color: white;
+  border-color: var(--purple-500);
+  box-shadow: var(--shadow-md), 0 0 20px rgba(107, 77, 138, 0.15);
+  animation: popIn 0.3s var(--ease-spring);
+}
+
+/* Timeline */
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.timeline-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  animation: slideUp 0.5s var(--ease-out) forwards;
+}
+
+.timeline-date {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--purple-600);
+  position: relative;
+  padding-left: 16px;
+}
+
+/* Timeline dot */
+.timeline-date::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--purple-400);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.history-card {
+  padding: var(--space-md);
+  transition: all var(--duration-normal) var(--ease-out);
+}
+
+.history-card:hover {
+  transform: translateY(-2px) translateX(4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.history-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.history-emoji {
+  font-size: 1.8rem;
+  transition: transform var(--duration-normal) var(--ease-spring);
+}
+
+.history-card:hover .history-emoji {
+  transform: scale(1.15) rotate(5deg);
+}
+
+.history-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-mood {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.history-time {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.history-badges {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.badge:hover {
+  transform: scale(1.1);
+}
+
+.badge-pos {
+  background: var(--purple-100);
+  color: var(--purple-700);
+}
+
+.badge-stress.stress-low {
+  background: var(--teal-100);
+  color: var(--teal-700);
+}
+
+.badge-stress.stress-moderate {
+  background: var(--amber-100);
+  color: #92400e;
+}
+
+.badge-stress.stress-high {
+  background: var(--coral-100);
+  color: var(--coral-700);
+}
+
+.history-text {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--space-sm);
+}
+
+.history-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: var(--space-sm);
+  background: var(--purple-50);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--purple-300);
+  transition: border-color var(--duration-normal);
+}
+
+.history-card:hover .history-insight {
+  border-color: var(--purple-500);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: var(--space-3xl) var(--space-lg);
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: var(--space-md);
+  animation: float 3s ease-in-out infinite;
+}
+
+.empty-state h3 {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.empty-state p {
+  font-size: 0.88rem;
+}
+
+/* Footer */
+.history-footer {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: var(--space-md) 0;
+}
