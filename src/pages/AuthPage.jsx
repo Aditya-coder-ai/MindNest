@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '../firebase.js';
 import logo from '../assets/logo.png';
+import mascot from '../assets/mascot.png';
 import './AuthPage.css';
 
 /* ---------- floating particles (reused from WelcomePage) ---------- */
@@ -117,6 +118,16 @@ export default function AuthPage() {
       <div className="orb orb-1" aria-hidden="true" />
       <div className="orb orb-2" aria-hidden="true" />
       <div className="orb orb-3" aria-hidden="true" />
+
+      {/* Mascot — left side (pointing right toward form) */}
+      <div className="auth-mascot auth-mascot-left" aria-hidden="true">
+        <img src={mascot} alt="" className="mascot-img" />
+      </div>
+
+      {/* Mascot — right side (flipped, pointing left toward form) */}
+      <div className="auth-mascot auth-mascot-right" aria-hidden="true">
+        <img src={mascot} alt="" className="mascot-img" />
+      </div>
 
       <div className="auth-container">
         {/* Logo + Brand */}

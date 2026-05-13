@@ -366,6 +366,97 @@
   color: var(--purple-700);
 }
 
+/* ─── Mascot Characters ─── */
+.auth-mascot {
+  position: fixed;
+  z-index: 2;
+  pointer-events: none;
+  animation: mascot-entrance 0.8s var(--ease-spring) forwards;
+  opacity: 0;
+}
+
+.auth-mascot-left {
+  left: 2vw;
+  top: 50%;
+  transform: translateY(-50%);
+  animation-delay: 0.5s;
+}
+
+.auth-mascot-right {
+  right: 2vw;
+  top: 50%;
+  transform: translateY(-50%) scaleX(-1);
+  animation-delay: 0.8s;
+}
+
+.mascot-img {
+  width: clamp(140px, 18vw, 260px);
+  height: auto;
+  filter: drop-shadow(0 8px 24px rgba(107, 77, 138, 0.15));
+  animation: mascot-float 4s ease-in-out infinite;
+}
+
+.auth-mascot-right .mascot-img {
+  animation-delay: 1.5s;
+}
+
+@keyframes mascot-entrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.3) rotate(-10deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.08) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1) rotate(0);
+  }
+}
+
+/* Override for the flipped (right) mascot */
+.auth-mascot-right {
+  animation-name: mascot-entrance-right;
+}
+
+@keyframes mascot-entrance-right {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scaleX(-1) scale(0.3) rotate(10deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-50%) scaleX(-1) scale(1.08) rotate(-2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scaleX(-1) scale(1) rotate(0);
+  }
+}
+
+@keyframes mascot-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+
+/* Hide mascots on screens too narrow to fit them alongside the form */
+@media (max-width: 900px) {
+  .auth-mascot {
+    display: none;
+  }
+}
+
+/* On very wide screens, push mascots a bit further from edges */
+@media (min-width: 1400px) {
+  .auth-mascot-left {
+    left: 6vw;
+  }
+  .auth-mascot-right {
+    right: 6vw;
+  }
+}
+
 /* ─── Responsive ─── */
 @media (max-width: 480px) {
   .auth-page {
