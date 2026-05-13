@@ -44,13 +44,13 @@
 /* ─── Mood Selector ─── */
 .mood-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: var(--space-sm);
 }
 
-@media (min-width: 480px) {
+@media (max-width: 480px) {
   .mood-grid {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -639,4 +639,237 @@
   padding: 1px 6px;
   border-radius: var(--radius-full);
   background: var(--purple-100);
+}
+
+/* ─── VAD (Valence-Arousal-Dominance) Section ─── */
+.vad-section {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  background: linear-gradient(135deg, rgba(107, 77, 138, 0.03) 0%, rgba(77, 184, 164, 0.03) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(107, 77, 138, 0.08);
+}
+
+.vad-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+}
+
+.vad-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.vad-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vad-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vad-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  background: var(--purple-50);
+  color: var(--purple-600);
+}
+
+.vad-bar-bg {
+  width: 100%;
+  height: 10px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.vad-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 1.2s var(--ease-out);
+  position: relative;
+}
+
+.vad-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.vad-valence {
+  background: linear-gradient(90deg, #ef4444 0%, #fbbf24 40%, #34d399 100%);
+}
+
+.vad-arousal {
+  background: linear-gradient(90deg, #94a3b8 0%, #fb923c 50%, #ef4444 100%);
+}
+
+.vad-dominance {
+  background: linear-gradient(90deg, #c084fc 0%, #60a5fa 50%, #3b82f6 100%);
+}
+
+.vad-value {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vad-desc {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.vad-meta {
+  margin-top: var(--space-sm);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding-top: var(--space-sm);
+  border-top: 1px solid rgba(107, 77, 138, 0.06);
+}
+
+.prob-label {
+  min-width: 80px;
+}
+
+/* ─── RAG (Retrieval-Augmented Generation) Section ─── */
+.rag-section {
+  margin-bottom: var(--space-lg);
+  padding: var(--space-md);
+  background: linear-gradient(135deg, rgba(77, 184, 164, 0.04) 0%, rgba(107, 77, 138, 0.04) 100%);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(77, 184, 164, 0.12);
+  animation: slideInLeft 0.6s var(--ease-out) forwards;
+}
+
+.rag-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.rag-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--teal-400), var(--purple-400));
+  color: white;
+  text-transform: uppercase;
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.rag-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-sm);
+  border: 1px solid rgba(77, 184, 164, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all var(--duration-normal) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.rag-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--teal-400), var(--purple-400));
+  border-radius: 3px 0 0 3px;
+}
+
+.rag-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(77, 184, 164, 0.12);
+  border-color: rgba(77, 184, 164, 0.18);
+}
+
+.rag-card:last-child {
+  margin-bottom: 0;
+}
+
+.rag-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xs);
+}
+
+.rag-category {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  background: var(--teal-100);
+  color: var(--teal-700);
+}
+
+.rag-relevance {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--purple-50);
+}
+
+.rag-card-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.rag-card-content {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: var(--space-xs);
+}
+
+.rag-card-source {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding-top: var(--space-xs);
+  border-top: 1px solid rgba(107, 77, 138, 0.06);
 }

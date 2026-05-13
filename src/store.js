@@ -143,30 +143,42 @@ export async function analyzeMoodAI(text, selectedMood = null) {
    =================================================================== */
 
 const MOOD_KEYWORDS = {
-  happy: ['happy', 'great', 'amazing', 'wonderful', 'fantastic', 'good', 'love', 'joy', 'blessed', 'grateful', 'excited', 'awesome', 'excellent', 'delighted', 'cheerful', 'thrilled', 'elated', 'proud', 'celebrate'],
-  sad: ['sad', 'unhappy', 'depressed', 'down', 'lonely', 'miss', 'cry', 'tears', 'heartbreak', 'gloomy', 'grief', 'miserable', 'sorrow', 'blue', 'melancholy', 'hopeless'],
-  angry: ['angry', 'mad', 'furious', 'annoyed', 'irritated', 'frustrated', 'rage', 'hate', 'upset', 'outraged', 'livid', 'resentful', 'bitter'],
+  happy: ['happy', 'great', 'amazing', 'wonderful', 'fantastic', 'good', 'love', 'joy', 'awesome', 'excellent', 'delighted', 'cheerful', 'elated', 'proud', 'celebrate', 'smile', 'laugh'],
+  sad: ['sad', 'unhappy', 'depressed', 'down', 'miss', 'cry', 'tears', 'heartbreak', 'gloomy', 'grief', 'miserable', 'sorrow', 'blue', 'melancholy', 'hopeless'],
+  angry: ['angry', 'mad', 'furious', 'annoyed', 'irritated', 'rage', 'hate', 'upset', 'outraged', 'livid', 'resentful', 'bitter', 'hostile'],
   anxious: ['anxious', 'worried', 'nervous', 'stressed', 'overwhelmed', 'panic', 'fear', 'tense', 'restless', 'uneasy', 'dread', 'apprehensive', 'exam', 'deadline', 'pressure'],
   calm: ['calm', 'peaceful', 'relaxed', 'serene', 'content', 'tranquil', 'chill', 'mindful', 'meditate', 'balanced', 'quiet', 'zen', 'soothing', 'rested'],
   tired: ['tired', 'exhausted', 'sleepy', 'drained', 'fatigue', 'burnt', 'burnout', 'weary', 'drowsy', 'lethargic', 'sluggish', 'sleep'],
+  grateful: ['grateful', 'thankful', 'appreciate', 'blessed', 'gratitude', 'treasure', 'cherish', 'fortunate', 'kindness', 'generous', 'warmth', 'giving', 'thanks'],
+  lonely: ['lonely', 'alone', 'isolated', 'abandoned', 'forgotten', 'invisible', 'disconnected', 'outsider', 'excluded', 'unwanted', 'neglected', 'rejected', 'solitude'],
+  excited: ['excited', 'thrilled', 'eager', 'enthusiasm', 'adrenaline', 'pumped', 'stoked', 'buzzing', 'giddy', 'exhilarated', 'ecstatic', 'anticipation', 'adventure'],
+  frustrated: ['frustrated', 'stuck', 'roadblock', 'failure', 'setback', 'defeated', 'blocked', 'helpless', 'powerless', 'obstacle', 'impossible', 'exasperated', 'aggravated'],
 };
 
 const MOOD_META = {
-  happy:   { emoji: '😊', label: 'Happy',   color: '#fbbf24', positivityBase: 82 },
-  sad:     { emoji: '😔', label: 'Sad',     color: '#60a5fa', positivityBase: 25 },
-  angry:   { emoji: '😡', label: 'Angry',   color: '#fb7185', positivityBase: 18 },
-  anxious: { emoji: '😰', label: 'Anxious', color: '#c084fc', positivityBase: 30 },
-  calm:    { emoji: '😌', label: 'Calm',    color: '#34d399', positivityBase: 75 },
-  tired:   { emoji: '😴', label: 'Tired',   color: '#94a3b8', positivityBase: 40 },
+  happy:      { emoji: '😊', label: 'Happy',      color: '#fbbf24', positivityBase: 82 },
+  sad:        { emoji: '😔', label: 'Sad',        color: '#60a5fa', positivityBase: 25 },
+  angry:      { emoji: '😡', label: 'Angry',      color: '#fb7185', positivityBase: 18 },
+  anxious:    { emoji: '😰', label: 'Anxious',    color: '#c084fc', positivityBase: 30 },
+  calm:       { emoji: '😌', label: 'Calm',       color: '#34d399', positivityBase: 75 },
+  tired:      { emoji: '😴', label: 'Tired',      color: '#94a3b8', positivityBase: 40 },
+  grateful:   { emoji: '🙏', label: 'Grateful',   color: '#f0abfc', positivityBase: 88 },
+  lonely:     { emoji: '🥀', label: 'Lonely',     color: '#7dd3fc', positivityBase: 20 },
+  excited:    { emoji: '🎉', label: 'Excited',    color: '#fcd34d', positivityBase: 85 },
+  frustrated: { emoji: '😤', label: 'Frustrated', color: '#fdba74', positivityBase: 22 },
 };
 
 const STRESS_LEVELS = {
   happy: 'Low',
   calm: 'Low',
+  grateful: 'Low',
+  excited: 'Low',
   sad: 'Moderate',
   tired: 'Moderate',
+  lonely: 'Moderate',
   anxious: 'High',
   angry: 'High',
+  frustrated: 'High',
 };
 
 const INSIGHTS = {
@@ -200,6 +212,26 @@ const INSIGHTS = {
     "Your body is asking for recovery. Honor that signal.",
     "Try limiting screen time before bed tonight for better sleep quality.",
   ],
+  grateful: [
+    "Gratitude rewires your brain for happiness. You're doing something beautiful.",
+    "Counting your blessings amplifies joy — keep this practice going!",
+    "A grateful heart is a magnet for miracles. Your perspective is inspiring.",
+  ],
+  lonely: [
+    "Loneliness is a signal, not a sentence. Consider reaching out to someone today.",
+    "You are worthy of connection. Try joining a community or group activity.",
+    "Being alone is not the same as being lonely — nurture your relationship with yourself.",
+  ],
+  excited: [
+    "Channel this incredible energy into something creative or productive!",
+    "Your excitement is contagious — share it with someone who matters to you.",
+    "Savor this feeling! Write down what's making you this excited to remember it later.",
+  ],
+  frustrated: [
+    "Frustration often means you care deeply. Take a step back and reassess your approach.",
+    "Try breaking the problem into smaller, manageable pieces.",
+    "Remember: every expert was once a beginner. Progress isn't always linear.",
+  ],
 };
 
 const SUGGESTIONS = {
@@ -232,6 +264,26 @@ const SUGGESTIONS = {
     { icon: '😴', text: 'Take a 20-minute power nap' },
     { icon: '💧', text: 'Stay hydrated — drink a glass of water' },
     { icon: '📵', text: 'Reduce screen time before sleeping tonight' },
+  ],
+  grateful: [
+    { icon: '💌', text: 'Write a thank-you note to someone special' },
+    { icon: '🌟', text: 'Start a gratitude journal — list 5 blessings' },
+    { icon: '🤗', text: 'Pay it forward with a random act of kindness' },
+  ],
+  lonely: [
+    { icon: '📱', text: "Call or text someone you haven't spoken to in a while" },
+    { icon: '🏘️', text: 'Join a local community group or online forum' },
+    { icon: '🐾', text: 'Spend time with a pet or visit an animal shelter' },
+  ],
+  excited: [
+    { icon: '📸', text: 'Capture this moment — take photos or journal it' },
+    { icon: '🗣️', text: 'Share the excitement with your closest people' },
+    { icon: '🎯', text: 'Channel this energy into your passion project' },
+  ],
+  frustrated: [
+    { icon: '🔄', text: 'Take a 10-minute break and come back fresh' },
+    { icon: '🧩', text: 'Break the problem into smaller, solvable pieces' },
+    { icon: '💪', text: "Remember past challenges you've already overcome" },
   ],
 };
 
@@ -277,6 +329,7 @@ export function analyzeMoodLocal(text, selectedMood = null) {
     confidence: null,
     allProbabilities: null,
     aiPowered: false,
+    vad: null,
   };
 }
 

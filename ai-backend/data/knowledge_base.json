@@ -1,0 +1,164 @@
+{
+  "documents": [
+    {
+      "id": "cbt_thought_challenging",
+      "category": "technique",
+      "emotions": ["anxious", "sad", "frustrated"],
+      "title": "Cognitive Restructuring (CBT)",
+      "content": "When negative thoughts spiral, try the CBT thought record technique. Write down the automatic thought, identify the cognitive distortion (catastrophizing, black-and-white thinking, mind reading), then generate a balanced alternative thought. Ask yourself: What evidence supports this thought? What evidence contradicts it? What would I tell a friend in this situation?",
+      "source": "Cognitive Behavioral Therapy (Beck, 1979)"
+    },
+    {
+      "id": "box_breathing",
+      "category": "technique",
+      "emotions": ["anxious", "angry", "frustrated"],
+      "title": "Box Breathing Exercise",
+      "content": "Box breathing activates your parasympathetic nervous system to reduce stress. Inhale slowly for 4 seconds, hold your breath for 4 seconds, exhale slowly for 4 seconds, hold empty for 4 seconds. Repeat 4-6 cycles. Navy SEALs use this technique to stay calm under extreme pressure. It lowers cortisol levels and heart rate within minutes.",
+      "source": "Navy SEAL stress management protocol"
+    },
+    {
+      "id": "grounding_54321",
+      "category": "technique",
+      "emotions": ["anxious", "lonely", "sad"],
+      "title": "5-4-3-2-1 Grounding Technique",
+      "content": "When anxiety or dissociation strikes, engage your five senses: Name 5 things you can see, 4 things you can touch, 3 things you can hear, 2 things you can smell, and 1 thing you can taste. This grounds you in the present moment and interrupts the anxiety feedback loop. It works because sensory input competes with anxious thoughts for neural processing resources.",
+      "source": "Dialectical Behavior Therapy (Linehan, 1993)"
+    },
+    {
+      "id": "gratitude_journaling",
+      "category": "practice",
+      "emotions": ["grateful", "happy", "calm"],
+      "title": "Gratitude Journaling Practice",
+      "content": "Research by Dr. Robert Emmons shows that writing down three specific things you are grateful for each day increases happiness by 25% over 10 weeks. Be specific rather than general: instead of 'I am grateful for my family,' write 'I am grateful that my sister called to check on me today.' Specificity strengthens the neural gratitude pathway and builds resilience against negative emotions.",
+      "source": "Emmons & McCullough (2003), Journal of Personality and Social Psychology"
+    },
+    {
+      "id": "progressive_muscle_relaxation",
+      "category": "technique",
+      "emotions": ["anxious", "tired", "angry"],
+      "title": "Progressive Muscle Relaxation (PMR)",
+      "content": "Systematically tense and release each muscle group for 5-10 seconds each: start with your toes, then calves, thighs, abdomen, chest, hands, arms, shoulders, neck, and face. The tension-release cycle teaches your body the difference between stress and relaxation. PMR reduces cortisol levels by up to 25% and is especially effective before sleep. Practice daily for cumulative benefits.",
+      "source": "Jacobson's Progressive Relaxation (1938)"
+    },
+    {
+      "id": "behavioral_activation",
+      "category": "technique",
+      "emotions": ["sad", "lonely", "tired"],
+      "title": "Behavioral Activation for Low Mood",
+      "content": "When feeling low, the instinct is to withdraw, but this creates a cycle of inactivity and worsening mood. Behavioral activation breaks this cycle: schedule one small pleasurable activity (a short walk, calling a friend, cooking a meal) and one mastery activity (completing a small task, learning something). Start tiny — even 5 minutes counts. Action creates motivation, not the other way around.",
+      "source": "Behavioral Activation for Depression (Martell et al., 2010)"
+    },
+    {
+      "id": "sleep_hygiene",
+      "category": "practice",
+      "emotions": ["tired", "anxious", "sad"],
+      "title": "Sleep Hygiene Optimization",
+      "content": "Poor sleep amplifies negative emotions by 60% according to UC Berkeley research. Key sleep hygiene practices: maintain a consistent sleep-wake schedule (even weekends), avoid screens 1 hour before bed (blue light suppresses melatonin), keep your bedroom cool (65-68°F / 18-20°C), limit caffeine after 2 PM, and try a wind-down routine like reading or gentle stretching. Even one night of improved sleep measurably improves emotional regulation.",
+      "source": "Walker, M. (2017). Why We Sleep. National Sleep Foundation guidelines."
+    },
+    {
+      "id": "emotional_labeling",
+      "category": "technique",
+      "emotions": ["angry", "anxious", "frustrated", "sad"],
+      "title": "Affect Labeling (Name It to Tame It)",
+      "content": "Neuroscience research by Dr. Matthew Lieberman at UCLA shows that simply naming your emotions reduces amygdala activation by up to 50%. When you feel overwhelmed, pause and label: 'I am feeling frustrated because my project is not going well.' This shifts processing from the emotional brain (amygdala) to the prefrontal cortex, giving you more control. Be precise: 'irritated' is more helpful than just 'bad.'",
+      "source": "Lieberman et al. (2007), Psychological Science"
+    },
+    {
+      "id": "social_connection",
+      "category": "practice",
+      "emotions": ["lonely", "sad", "anxious"],
+      "title": "Building Social Connection",
+      "content": "Loneliness affects health as severely as smoking 15 cigarettes daily. Combat it with micro-connections: smile at a stranger, chat with a barista, text an old friend. Dr. Julianne Holt-Lunstad's research shows that social connection increases lifespan by 50%. Join interest-based groups (book clubs, sports, volunteering). Quality matters more than quantity — even one meaningful relationship significantly buffers against loneliness and depression.",
+      "source": "Holt-Lunstad et al. (2010), PLoS Medicine"
+    },
+    {
+      "id": "anger_management_steps",
+      "category": "technique",
+      "emotions": ["angry", "frustrated"],
+      "title": "STOP Technique for Anger",
+      "content": "When anger surges, use the STOP technique: S — Stop what you are doing immediately. T — Take three deep breaths. O — Observe what you are feeling without judgment (body tension, racing heart, clenched jaw). P — Proceed with awareness, choosing a response rather than reacting impulsively. Anger peaks in 90 seconds — if you can ride out that wave, the intensity naturally diminishes. Physical movement like walking helps metabolize stress hormones.",
+      "source": "American Psychological Association anger management guidelines"
+    },
+    {
+      "id": "mindfulness_meditation",
+      "category": "practice",
+      "emotions": ["calm", "anxious", "happy"],
+      "title": "Mindfulness Meditation Basics",
+      "content": "Even 10 minutes of daily mindfulness meditation reduces anxiety by 30% and increases grey matter density in brain regions associated with self-awareness and compassion. Sit comfortably, focus on your breath, and when thoughts arise, gently redirect attention back to breathing without judgment. The goal is not to stop thinking but to observe thoughts without attachment. Apps like Headspace or Calm can guide beginners. Consistency matters more than duration.",
+      "source": "Goyal et al. (2014), JAMA Internal Medicine; Harvard Gazette"
+    },
+    {
+      "id": "positive_psychology_savoring",
+      "category": "practice",
+      "emotions": ["happy", "excited", "grateful"],
+      "title": "Savoring Positive Experiences",
+      "content": "Positive psychology research shows we can amplify happiness by consciously savoring good moments. When something good happens, pause for 20-30 seconds and fully absorb the experience: notice the physical sensations, emotions, and thoughts. Share the experience with someone (capitalization research shows this doubles the positive effect). Take a mental photograph. Reflect on it before sleep. Savoring rewires your brain's negativity bias over time.",
+      "source": "Bryant & Veroff (2007), Savoring: A New Model of Positive Experience"
+    },
+    {
+      "id": "exercise_mental_health",
+      "category": "practice",
+      "emotions": ["sad", "anxious", "angry", "tired", "frustrated"],
+      "title": "Exercise as Mental Health Medicine",
+      "content": "A Duke University study found that 30 minutes of moderate exercise three times per week is as effective as antidepressants for mild-to-moderate depression. Exercise releases endorphins, BDNF (brain-derived neurotrophic factor), and serotonin. Even a 10-minute walk improves mood for up to 2 hours. For anxiety, rhythmic exercises (walking, swimming, cycling) are especially calming. The key is consistency, not intensity.",
+      "source": "Blumenthal et al. (2007), Duke University; Ratey, J. (2008). Spark."
+    },
+    {
+      "id": "journaling_expressive_writing",
+      "category": "practice",
+      "emotions": ["sad", "angry", "anxious", "frustrated", "lonely"],
+      "title": "Expressive Writing Therapy",
+      "content": "Dr. James Pennebaker's research shows that writing about emotional experiences for 15-20 minutes on 3-4 consecutive days improves immune function, reduces doctor visits, and decreases anxiety and depression. Write freely without worrying about grammar. Focus on your deepest feelings and thoughts. You do not need to share or reread what you write. The act of translating emotional experiences into words reorganizes them in the brain, reducing their emotional charge.",
+      "source": "Pennebaker, J. (1997). Opening Up: The Healing Power of Expressing Emotions."
+    },
+    {
+      "id": "self_compassion",
+      "category": "technique",
+      "emotions": ["sad", "frustrated", "lonely", "anxious"],
+      "title": "Self-Compassion Practice",
+      "content": "Dr. Kristin Neff identifies three components of self-compassion: self-kindness (treat yourself as you would a good friend), common humanity (recognize suffering is part of the shared human experience), and mindfulness (observe pain without over-identifying). When self-critical, place your hand on your heart and say: 'This is a moment of suffering. Suffering is part of life. May I be kind to myself.' Self-compassion is more effective than self-esteem for emotional resilience.",
+      "source": "Neff, K. (2011). Self-Compassion: The Proven Power of Being Kind to Yourself."
+    },
+    {
+      "id": "dopamine_menu",
+      "category": "practice",
+      "emotions": ["tired", "sad", "lonely"],
+      "title": "Create a Dopamine Menu",
+      "content": "When motivation is low, pre-plan a menu of mood-boosting activities across effort levels. Appetizers (low effort): listen to a favorite song, step outside for fresh air, pet an animal. Main courses (medium effort): go for a walk, call a friend, cook a simple meal, do a puzzle. Desserts (high effort): exercise, create art, deep clean a room. Having options pre-decided removes the decision fatigue that keeps you stuck when energy is low.",
+      "source": "Positive psychology and behavioral activation principles"
+    },
+    {
+      "id": "worry_time",
+      "category": "technique",
+      "emotions": ["anxious"],
+      "title": "Scheduled Worry Time",
+      "content": "Paradoxically, scheduling a specific 15-minute worry period each day reduces overall anxiety. When worries arise outside this time, write them down and postpone them to your worry window. During worry time, review your list — many worries will have resolved themselves. For remaining ones, categorize: solvable (make an action plan) or unsolvable (practice acceptance). This technique gives your brain permission to let go the rest of the day.",
+      "source": "Borkovec, T. (1983). Worry therapy. Behaviour Research and Therapy."
+    },
+    {
+      "id": "nature_exposure",
+      "category": "practice",
+      "emotions": ["anxious", "sad", "tired", "frustrated", "angry"],
+      "title": "Nature Therapy (Forest Bathing)",
+      "content": "Japanese research on shinrin-yoku (forest bathing) shows that spending 20 minutes in nature reduces cortisol by 16%, blood pressure by 2%, and heart rate by 4%. Even looking at nature images or indoor plants has measurable calming effects. Green spaces reduce rumination — the repetitive negative thinking linked to depression. If forests are not accessible, a park, garden, or even sitting by a window with a view helps. Natural light also regulates circadian rhythms and improves sleep.",
+      "source": "Li, Q. (2018). Forest Bathing. Park et al. (2010), Environmental Health and Preventive Medicine."
+    },
+    {
+      "id": "excited_goal_setting",
+      "category": "practice",
+      "emotions": ["excited", "happy"],
+      "title": "Channel Excitement into Goal Setting",
+      "content": "High-energy positive emotions are the ideal time to set intentions and make plans. Research on 'broaden-and-build' theory by Dr. Barbara Fredrickson shows that positive emotions expand your thinking and help you build lasting resources. When you feel excited, write down your goals, brainstorm ideas, and commit to next steps. Positive emotional states enhance creativity by 300% and improve decision-making. Use this energy window wisely before it fades.",
+      "source": "Fredrickson, B. (2001). Broaden-and-Build Theory. American Psychologist."
+    },
+    {
+      "id": "emotional_first_aid",
+      "category": "technique",
+      "emotions": ["sad", "lonely", "angry", "frustrated"],
+      "title": "Emotional First Aid",
+      "content": "Psychologist Guy Winch advocates treating emotional injuries with the same urgency as physical ones. For rejection: remind yourself of your worth by listing qualities others value in you. For rumination: distract for 2 minutes with an engaging task (Sudoku, counting backward by 7s). For failure: focus on factors within your control and list lessons learned. For loneliness: fight the urge to isolate and identify one social action you can take today.",
+      "source": "Winch, G. (2014). Emotional First Aid: Healing Rejection, Guilt, Failure, and Other Everyday Hurts."
+    }
+  ]
+}

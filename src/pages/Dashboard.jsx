@@ -11,12 +11,16 @@ import MoodGraph from '../components/MoodGraph.jsx';
 import './Dashboard.css';
 
 const MOODS = [
-  { key: 'happy',   emoji: '😊', label: 'Happy' },
-  { key: 'sad',     emoji: '😔', label: 'Sad' },
-  { key: 'angry',   emoji: '😡', label: 'Angry' },
-  { key: 'anxious', emoji: '😰', label: 'Anxious' },
-  { key: 'calm',    emoji: '😌', label: 'Calm' },
-  { key: 'tired',   emoji: '😴', label: 'Tired' },
+  { key: 'happy',      emoji: '😊', label: 'Happy' },
+  { key: 'sad',        emoji: '😔', label: 'Sad' },
+  { key: 'angry',      emoji: '😡', label: 'Angry' },
+  { key: 'anxious',    emoji: '😰', label: 'Anxious' },
+  { key: 'calm',       emoji: '😌', label: 'Calm' },
+  { key: 'tired',      emoji: '😴', label: 'Tired' },
+  { key: 'grateful',   emoji: '🙏', label: 'Grateful' },
+  { key: 'lonely',     emoji: '🥀', label: 'Lonely' },
+  { key: 'excited',    emoji: '🎉', label: 'Excited' },
+  { key: 'frustrated', emoji: '😤', label: 'Frustrated' },
 ];
 
 function getGreeting() {
@@ -69,6 +73,9 @@ export default function Dashboard() {
         insight: analysis.insight,
         aiPowered: analysis.aiPowered || false,
         confidence: analysis.confidence || null,
+        valence: analysis.vad?.valence || null,
+        arousal: analysis.vad?.arousal || null,
+        dominance: analysis.vad?.dominance || null,
       });
 
       setResult(analysis);
@@ -98,7 +105,7 @@ export default function Dashboard() {
         {aiOnline === null ? (
           <span className="ai-badge ai-checking">⏳ Checking AI model…</span>
         ) : aiOnline ? (
-          <span className="ai-badge ai-online">🧠 Advanced AI Analysis Active</span>
+          <span className="ai-badge ai-online">🧠 AI + RAG Analysis Active</span>
         ) : (
           <span className="ai-badge ai-offline">💡 Classic Journaling Mode</span>
         )}
@@ -236,6 +243,53 @@ export default function Dashboard() {
               </div>
             )}
 
+            {/* VAD Scores — NRC Lexicon */}
+            {result.vad && (
+              <div className="vad-section">
+                <h4 className="vad-title">🧠 Emotional Dimensions (VAD)</h4>
+                <div className="vad-grid">
+                  <div className="vad-item">
+                    <div className="vad-header">
+                      <span className="vad-label">Valence</span>
+                      <span className="vad-badge">{result.vad.valenceLabel}</span>
+                    </div>
+                    <div className="vad-bar-bg">
+                      <div className="vad-bar vad-valence" style={{ width: `${result.vad.valence * 100}%` }} />
+                    </div>
+                    <span className="vad-value">{(result.vad.valence * 100).toFixed(0)}%</span>
+                    <span className="vad-desc">Emotional positivity</span>
+                  </div>
+                  <div className="vad-item">
+                    <div className="vad-header">
+                      <span className="vad-label">Arousal</span>
+                      <span className="vad-badge">{result.vad.arousalLabel}</span>
+                    </div>
+                    <div className="vad-bar-bg">
+                      <div className="vad-bar vad-arousal" style={{ width: `${result.vad.arousal * 100}%` }} />
+                    </div>
+                    <span className="vad-value">{(result.vad.arousal * 100).toFixed(0)}%</span>
+                    <span className="vad-desc">Emotional intensity</span>
+                  </div>
+                  <div className="vad-item">
+                    <div className="vad-header">
+                      <span className="vad-label">Dominance</span>
+                      <span className="vad-badge">{result.vad.dominanceLabel}</span>
+                    </div>
+                    <div className="vad-bar-bg">
+                      <div className="vad-bar vad-dominance" style={{ width: `${result.vad.dominance * 100}%` }} />
+                    </div>
+                    <span className="vad-value">{(result.vad.dominance * 100).toFixed(0)}%</span>
+                    <span className="vad-desc">Sense of control</span>
+                  </div>
+                </div>
+                {result.vad.matchedWords > 0 && (
+                  <p className="vad-meta">
+                    📚 Analyzed {result.vad.matchedWords} of {result.vad.totalWords} words via NRC VAD Lexicon
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="result-insight">
               <span className="insight-icon">💡</span>
               <p>{result.insight}</p>
@@ -251,6 +305,26 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+
+            {/* RAG Context — Retrieved Knowledge */}
+            {result.rag && result.rag.ragEnabled && result.rag.retrievedContext && (
+              <div className="rag-section">
+                <h4 className="rag-title">📚 Evidence-Based Insights <span className="rag-badge">RAG</span></h4>
+                {result.rag.retrievedContext.map((ctx, i) => (
+                  <div key={i} className="rag-card">
+                    <div className="rag-card-header">
+                      <span className="rag-category">{ctx.category}</span>
+                      <span className="rag-relevance">{Math.round(ctx.relevance * 100)}% match</span>
+                    </div>
+                    <h5 className="rag-card-title">{ctx.title}</h5>
+                    <p className="rag-card-content">{ctx.content}</p>
+                    {ctx.source && (
+                      <p className="rag-card-source">📖 {ctx.source}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <button className="btn-secondary" onClick={handleReset} id="new-entry-btn">
               + New Entry

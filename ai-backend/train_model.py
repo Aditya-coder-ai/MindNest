@@ -2,17 +2,31 @@
 ╔══════════════════════════════════════════════════════════════════╗
 ║               MindNest — AI Model Training Script               ║
 ║                                                                  ║
-║  This script trains a machine learning pipeline for emotion      ║
-║  classification from journal text entries.                       ║
+║  This script trains a Neural Network (MLP) pipeline with         ║
+║  SIGMOID (logistic) activation for emotion classification        ║
+║  from journal text entries.                                      ║
+║                                                                  ║
+║  Dataset: GoEmotions (Google Research / Kaggle)                  ║
+║    • 58k+ Reddit comments → mapped to 10 MindNest emotions      ║
+║    • Balanced & cleaned for robust classification                ║
 ║                                                                  ║
 ║  Pipeline:                                                       ║
-║    1. Load & clean the labeled emotion dataset                   ║
+║    1. Load & clean the GoEmotions-derived dataset                ║
 ║    2. Text preprocessing (tokenization, stop-word removal,       ║
 ║       lemmatization)                                             ║
 ║    3. Feature extraction using TF-IDF Vectorization              ║
-║    4. Train a Logistic Regression classifier                     ║
+║    4. Train an MLP Neural Network with sigmoid activation        ║
 ║    5. Evaluate with accuracy, precision, recall, F1-score        ║
 ║    6. Save the trained model pipeline to disk                    ║
+║                                                                  ║
+║  Emotions: happy, sad, angry, anxious, calm, tired,              ║
+║            grateful, lonely, excited, frustrated                 ║
+║                                                                  ║
+║  Sigmoid Activation:                                             ║
+║    σ(x) = 1 / (1 + e^(-x))                                      ║
+║    Maps any real value to (0, 1), enabling smooth probability    ║
+║    estimation at each hidden neuron for nuanced emotion          ║
+║    boundary learning.                                            ║
 ║                                                                  ║
 ║  Usage:   python train_model.py                                  ║
 ║  Output:  model/emotion_classifier.pkl                           ║
@@ -28,9 +42,9 @@ import pandas as pd
 import joblib
 
 # ─── Scikit-learn imports ────────────────────────────────────────
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import (
     classification_report,
@@ -49,6 +63,8 @@ warnings.filterwarnings("ignore")
 
 print("=" * 60)
 print("  🌿 MindNest — AI Emotion Classifier Training")
+print("     🧠 Neural Network with Sigmoid Activation")
+print("     📦 Dataset: GoEmotions (Kaggle / Google Research)")
 print("=" * 60)
 
 # Download NLTK resources
@@ -79,7 +95,7 @@ print(f"   Emotion classes: {df['emotion'].nunique()}")
 print(f"\n   Distribution:")
 for emotion, count in df["emotion"].value_counts().items():
     bar = "█" * (count // 2)
-    print(f"     {emotion:>8s} : {count:3d}  {bar}")
+    print(f"     {emotion:>12s} : {count:3d}  {bar}")
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -153,10 +169,10 @@ print(f"     Clean: '{df['clean_text'].iloc[0]}'")
 
 
 # ═════════════════════════════════════════════════════════════════
-#  PHASE 3: Feature Extraction & Model Architecture
+#  PHASE 3: Feature Extraction & Neural Network Architecture
 # ═════════════════════════════════════════════════════════════════
 
-print("\n🏗️  Phase 3: Building ML Pipeline")
+print("\n🏗️  Phase 3: Building Neural Network Pipeline")
 
 # Split data: 80% training, 20% testing
 X = df["clean_text"]
@@ -181,11 +197,26 @@ print(f"   Testing samples:  {len(X_test)}")
 #      - Result: Words that are frequent in one doc but rare overall get
 #        high scores → they're more meaningful for classification
 #
-#   2. Logistic Regression: A classification algorithm that uses a
-#      sigmoid function to predict class probabilities.
-#      - "penalty='l2'" adds regularization to prevent overfitting
-#      - "max_iter=1000" gives the optimizer enough steps to converge
-#      - "C=1.0" controls regularization strength
+#   2. MLP Neural Network (Multi-Layer Perceptron):
+#      A feedforward neural network that uses SIGMOID (logistic) activation
+#      at each hidden neuron.
+#
+#      Sigmoid Function: σ(x) = 1 / (1 + e^(-x))
+#      ─────────────────────────────────────────
+#      The sigmoid squashes any input into range (0, 1):
+#        • Large positive x → σ(x) ≈ 1  (neuron "fires")
+#        • Large negative x → σ(x) ≈ 0  (neuron "silent")
+#        • x = 0            → σ(x) = 0.5 (uncertain)
+#
+#      This smooth, differentiable curve enables:
+#        • Nuanced probability estimation for each emotion
+#        • Gradient-based learning (backpropagation)
+#        • Non-linear decision boundaries between emotions
+#
+#      Architecture:
+#        Input (TF-IDF features) → Hidden Layer 1 (128 sigmoid neurons)
+#                                → Hidden Layer 2 (64 sigmoid neurons)
+#                                → Output (softmax over 10 emotion classes)
 
 pipeline = Pipeline([
     ("tfidf", TfidfVectorizer(
@@ -195,49 +226,77 @@ pipeline = Pipeline([
         max_df=0.95,             # Ignore words in >95% of documents
         sublinear_tf=True,       # Apply log normalization to TF
     )),
-    ("classifier", LogisticRegression(
-        penalty="l2",            # L2 regularization (Ridge)
-        C=1.0,                   # Inverse regularization strength
-        max_iter=1000,           # Max optimization iterations
-        solver="lbfgs",          # Optimization algorithm
+    ("classifier", MLPClassifier(
+        hidden_layer_sizes=(128, 64),       # 2 hidden layers with sigmoid neurons
+        activation="logistic",              # SIGMOID activation: σ(x) = 1/(1+e^-x)
+        solver="adam",                      # Adam optimizer (adaptive learning rate)
+        alpha=0.001,                        # L2 regularization (prevent overfitting)
+        learning_rate="adaptive",           # Reduce LR when loss plateaus
+        learning_rate_init=0.001,           # Initial learning rate
+        max_iter=200,                       # Max training epochs
+        batch_size="auto",                  # Auto batch size for dataset
+        early_stopping=False,               # Disabled (NumPy ufunc compat with string labels)
         random_state=42,
-        class_weight="balanced", # Handle class imbalance
+        verbose=True,                       # Show training progress
     )),
 ])
 
-print("   Pipeline architecture:")
-print("     ┌─────────────────────────────┐")
-print("     │  TF-IDF Vectorizer          │")
-print("     │  (Text → Feature Vectors)   │")
-print("     │  • 5000 max features        │")
-print("     │  • Unigrams + Bigrams       │")
-print("     │  • Sublinear TF scaling     │")
-print("     └──────────┬──────────────────┘")
+print("   Neural Network architecture:")
+print("     ┌─────────────────────────────────┐")
+print("     │  TF-IDF Vectorizer              │")
+print("     │  (Text → Feature Vectors)       │")
+print("     │  • 5000 max features            │")
+print("     │  • Unigrams + Bigrams           │")
+print("     │  • Sublinear TF scaling         │")
+print("     └──────────┬──────────────────────┘")
 print("                │")
-print("     ┌──────────▼──────────────────┐")
-print("     │  Logistic Regression        │")
-print("     │  (Feature Vectors → Class)  │")
-print("     │  • L2 regularization        │")
-print("     │  • Balanced class weights   │")
-print("     │  • Multinomial mode         │")
-print("     └─────────────────────────────┘")
+print("     ┌──────────▼──────────────────────┐")
+print("     │  Hidden Layer 1                 │")
+print("     │  • 128 neurons                  │")
+print("     │  • σ(x) = 1/(1+e^-x) [SIGMOID] │")
+print("     └──────────┬──────────────────────┘")
+print("                │")
+print("     ┌──────────▼──────────────────────┐")
+print("     │  Hidden Layer 2                 │")
+print("     │  • 64 neurons                   │")
+print("     │  • σ(x) = 1/(1+e^-x) [SIGMOID] │")
+print("     └──────────┬──────────────────────┘")
+print("                │")
+print("     ┌──────────▼──────────────────────┐")
+print("     │  Output Layer (Softmax)         │")
+print("     │  • 10 emotion classes           │")
+print("     │  • Probability distribution     │")
+print("     └─────────────────────────────────┘")
+print()
+print("   Sigmoid activation at each neuron:")
+print("              1.0 ─── ─ ─ ─ ──────────")
+print("             0.75 ─        ╱           ")
+print("     σ(x) =  0.5 ─ ─ ─ ─╳─ ─ ─ ─ ─  ")
+print("             0.25 ─   ╱                ")
+print("              0.0 ────── ─ ─ ─ ─ ─ ── ")
+print("                  -6  -3   0   3   6   ")
 
 
 # ═════════════════════════════════════════════════════════════════
 #  PHASE 4: Model Training
 # ═════════════════════════════════════════════════════════════════
 
-print("\n🧠 Phase 4: Training the Model...")
+print("\n🧠 Phase 4: Training the Neural Network...")
 
-# Cross-validation (evaluate before final training)
-print("   Running 5-fold cross-validation...")
-cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring="accuracy")
-print(f"   CV Accuracy: {cv_scores.mean():.4f} ± {cv_scores.std():.4f}")
-
-# Final training on full training set
-print("   Training on full training set...")
+# Train on full training set (skipping CV for speed — train/test split gives reliable eval)
+print("   Training on full training set (this may take a few minutes)...")
 pipeline.fit(X_train, y_train)
-print("   ✅ Model trained successfully!")
+print("   ✅ Neural Network trained successfully!")
+
+# Report MLP details
+mlp = pipeline.named_steps["classifier"]
+print(f"\n   Network details:")
+print(f"     Layers: {mlp.n_layers_}")
+print(f"     Activation: sigmoid (logistic)")
+print(f"     Training epochs: {mlp.n_iter_}")
+print(f"     Final loss: {mlp.loss_:.6f}")
+print(f"     Architecture: 128 -> 64 sigmoid neurons")
+print(f"     Dataset: GoEmotions (Kaggle / Google Research)")
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -264,14 +323,14 @@ for line in report.split("\n"):
 print("\n   Confusion Matrix:")
 labels = sorted(y.unique())
 cm = confusion_matrix(y_test, y_pred, labels=labels)
-print(f"   {'':>10s}", end="")
+print(f"   {'':>12s}", end="")
 for label in labels:
-    print(f" {label:>8s}", end="")
+    print(f" {label:>10s}", end="")
 print()
 for i, label in enumerate(labels):
-    print(f"   {label:>10s}", end="")
+    print(f"   {label:>12s}", end="")
     for j in range(len(labels)):
-        print(f" {cm[i][j]:>8d}", end="")
+        print(f" {cm[i][j]:>10d}", end="")
     print()
 
 
@@ -281,13 +340,21 @@ for i, label in enumerate(labels):
 
 print(f"\n💾 Phase 6: Saving model to {MODEL_PATH}")
 
-# Save the entire pipeline (vectorizer + classifier)
+# Save the entire pipeline (vectorizer + neural network)
 model_data = {
     "pipeline": pipeline,
     "classes": list(pipeline.classes_),
     "preprocessing_fn": "preprocess_text",
     "accuracy": accuracy,
-    "cv_accuracy": cv_scores.mean(),
+    "model_type": "MLP Neural Network (Sigmoid)",
+    "dataset": "GoEmotions (Kaggle / Google Research)",
+    "architecture": {
+        "hidden_layers": [128, 64],
+        "activation": "sigmoid (logistic)",
+        "optimizer": "adam",
+        "total_epochs": mlp.n_iter_,
+        "final_loss": mlp.loss_,
+    },
 }
 joblib.dump(model_data, MODEL_PATH)
 
@@ -310,9 +377,20 @@ test_texts = [
     "The exam is tomorrow and I am extremely nervous about it",
     "I feel so peaceful after my meditation session today",
     "I am exhausted and can barely keep my eyes open anymore",
+    "I am so thankful for all the blessings in my life",
+    "I feel completely alone and nobody reaches out to me",
+    "I am bursting with excitement about the trip next week",
+    "I keep hitting roadblocks and nothing works no matter what I try",
     "I had a great time at the party with my friends today",
     "I am worried about my future career and financial stability",
 ]
+
+emoji_map = {
+    "happy": "😊", "sad": "😔", "angry": "😡",
+    "anxious": "😰", "calm": "😌", "tired": "😴",
+    "grateful": "🙏", "lonely": "🥀", "excited": "🎉",
+    "frustrated": "😤",
+}
 
 for text in test_texts:
     clean = preprocess_text(text)
@@ -320,10 +398,6 @@ for text in test_texts:
     probabilities = pipeline.predict_proba([clean])[0]
     confidence = max(probabilities) * 100
 
-    emoji_map = {
-        "happy": "😊", "sad": "😔", "angry": "😡",
-        "anxious": "😰", "calm": "😌", "tired": "😴",
-    }
     emoji = emoji_map.get(prediction, "❓")
 
     print(f'\n   Input:  "{text}"')
@@ -340,6 +414,10 @@ for text in test_texts:
 # ═════════════════════════════════════════════════════════════════
 print("\n" + "=" * 60)
 print("  ✅ Training Complete!")
+print(f"  🧠 Model: MLP Neural Network (Sigmoid Activation)")
+print(f"  📐 Architecture: 128 -> 64 sigmoid neurons")
+print(f"  📦 Dataset: GoEmotions (Kaggle / Google Research)")
+print(f"  🎯 Emotions: {', '.join(sorted(pipeline.classes_))}")
 print(f"  📈 Final Accuracy: {accuracy:.2%}")
 print(f"  💾 Model saved to: {MODEL_PATH}")
 print("  🚀 Run 'python app.py' to start the API server")
