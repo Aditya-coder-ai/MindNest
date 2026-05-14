@@ -21,6 +21,13 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
+      // Re-evaluate started state when auth user changes
+      // New users won't have a displayName, so they'll see the welcome page
+      if (firebaseUser) {
+        setStarted(!!firebaseUser.displayName || !!getUserName());
+      } else {
+        setStarted(false);
+      }
     });
     return () => unsubscribe();
   }, []);

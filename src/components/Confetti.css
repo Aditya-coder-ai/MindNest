@@ -1,0 +1,45 @@
+/* ===== Confetti Celebration ===== */
+
+.confetti-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  opacity: 0;
+  animation: confetti-fall ease-out forwards;
+}
+
+.confetti-square {
+  border-radius: 2px;
+}
+
+.confetti-circle {
+  border-radius: 50%;
+}
+
+.confetti-strip {
+  border-radius: 2px;
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translateY(0) translateX(0) rotate(var(--rotation, 0deg));
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) translateX(var(--drift, 0px)) rotate(calc(var(--rotation, 0deg) + var(--rot-speed, 360deg)));
+  }
+}

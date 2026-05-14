@@ -86,6 +86,11 @@ export default function AmbientBackground() {
       <div className="ambient-sparkle sp-2">✨</div>
       <div className="ambient-sparkle sp-3">✨</div>
       <div className="ambient-sparkle sp-4">✨</div>
+
+      {/* 7. Pastel Gradient Orbs */}
+      <div className="ambient-pastel-orb pastel-orb-1" />
+      <div className="ambient-pastel-orb pastel-orb-2" />
+      <div className="ambient-pastel-orb pastel-orb-3" />
     </div>
   );
 }

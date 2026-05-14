@@ -2,10 +2,12 @@
    MindNest — local-first data helpers (localStorage)
    + Real AI Backend Integration (Python ML Model)
    + Firebase Firestore Integration (Production DB)
+   + Per-User Data Isolation (Firebase Auth UID)
    ========================================================= */
 
-import { db } from './firebase.js';
-import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
+import { db, auth } from './firebase.js';
+import { collection, addDoc, getDocs, query, orderBy, doc, setDoc, getDoc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 
 const STORAGE_KEY = 'mindnest_entries';
 const NAME_KEY = 'mindnest_user_name';
@@ -13,6 +15,14 @@ const NAME_KEY = 'mindnest_user_name';
 /* ─── AI Backend config ─── */
 const AI_API_URL = 'http://localhost:5000/api';
 let _aiAvailable = null; // null = unknown, true/false = checked
+
+/**
+ * Get the currently authenticated user's UID.
+ * Returns null if no user is signed in.
+ */
+function getCurrentUserId() {
+  return auth.currentUser?.uid || null;
+}
 
 /**
  * Shape of an entry:
@@ -31,8 +41,12 @@ let _aiAvailable = null; // null = unknown, true/false = checked
  */
 
 export async function getAllEntries() {
+  const uid = getCurrentUserId();
+  if (!uid) return [];
+
   try {
-    const q = query(collection(db, "entries"), orderBy("date", "desc"));
+    // Each user's entries are stored under users/{uid}/entries
+    const q = query(collection(db, "users", uid, "entries"), orderBy("date", "desc"));
     const querySnapshot = await getDocs(q);
     const entries = [];
     querySnapshot.forEach((doc) => {
@@ -41,9 +55,9 @@ export async function getAllEntries() {
     return entries;
   } catch (e) {
     console.error("Failed to fetch from Firestore, falling back to local", e);
-    // Fallback to localStorage
+    // Fallback to localStorage (user-scoped key)
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      return JSON.parse(localStorage.getItem(`${STORAGE_KEY}_${uid}`) || '[]');
     } catch {
       return [];
     }
@@ -51,27 +65,54 @@ export async function getAllEntries() {
 }
 
 export async function saveEntry(entry) {
+  const uid = getCurrentUserId();
+  if (!uid) {
+    console.error("No user signed in — cannot save entry");
+    return [];
+  }
+
   const newEntry = { ...entry, date: new Date().toISOString() };
   
   try {
-    await addDoc(collection(db, "entries"), newEntry);
+    // Save under users/{uid}/entries
+    await addDoc(collection(db, "users", uid, "entries"), newEntry);
     return await getAllEntries(); // Get updated list from DB
   } catch (e) {
     console.error("Failed to save to Firestore, falling back to local", e);
-    // Fallback to localStorage
+    // Fallback to localStorage (user-scoped key)
     const entries = await getAllEntries();
     entries.unshift({ ...newEntry, id: crypto.randomUUID() });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    localStorage.setItem(`${STORAGE_KEY}_${uid}`, JSON.stringify(entries));
     return entries;
   }
 }
 
 export function getUserName() {
+  // Prefer Firebase Auth displayName, fallback to localStorage
+  if (auth.currentUser?.displayName) {
+    return auth.currentUser.displayName;
+  }
   return localStorage.getItem(NAME_KEY) || '';
 }
 
-export function setUserName(name) {
+export async function setUserName(name) {
   localStorage.setItem(NAME_KEY, name);
+  // Also update Firebase Auth profile
+  if (auth.currentUser) {
+    try {
+      await updateProfile(auth.currentUser, { displayName: name });
+    } catch (e) {
+      console.warn("Failed to update displayName in Firebase Auth:", e);
+    }
+  }
+}
+
+/**
+ * Get the date when the current user's account was created.
+ * Returns an ISO string or null if unavailable.
+ */
+export function getUserJoinDate() {
+  return auth.currentUser?.metadata?.creationTime || null;
 }
 
 
