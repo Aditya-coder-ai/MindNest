@@ -378,22 +378,28 @@
 .auth-mascot-left {
   left: 2vw;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%) scaleX(-1);
   animation-delay: 0.5s;
 }
 
 .auth-mascot-right {
   right: 2vw;
   top: 50%;
-  transform: translateY(-50%) scaleX(-1);
+  transform: translateY(-50%);
   animation-delay: 0.8s;
 }
 
 .mascot-img {
   width: clamp(140px, 18vw, 260px);
   height: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
   filter: drop-shadow(0 8px 24px rgba(107, 77, 138, 0.15));
   animation: mascot-float 4s ease-in-out infinite;
+  border-radius: 42% 58% 55% 45% / 50% 45% 55% 50%;
+  background: rgba(255, 255, 255, 0.4);
+  padding: 8px;
+  border: 2px solid rgba(107, 77, 138, 0.08);
 }
 
 .auth-mascot-right .mascot-img {
@@ -401,26 +407,6 @@
 }
 
 @keyframes mascot-entrance {
-  0% {
-    opacity: 0;
-    transform: translateY(-50%) scale(0.3) rotate(-10deg);
-  }
-  60% {
-    opacity: 1;
-    transform: translateY(-50%) scale(1.08) rotate(2deg);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(-50%) scale(1) rotate(0);
-  }
-}
-
-/* Override for the flipped (right) mascot */
-.auth-mascot-right {
-  animation-name: mascot-entrance-right;
-}
-
-@keyframes mascot-entrance-right {
   0% {
     opacity: 0;
     transform: translateY(-50%) scaleX(-1) scale(0.3) rotate(10deg);
@@ -432,6 +418,26 @@
   100% {
     opacity: 1;
     transform: translateY(-50%) scaleX(-1) scale(1) rotate(0);
+  }
+}
+
+/* Override for the flipped (right) mascot */
+.auth-mascot-right {
+  animation-name: mascot-entrance-right;
+}
+
+@keyframes mascot-entrance-right {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.3) rotate(-10deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.08) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1) rotate(0);
   }
 }
 

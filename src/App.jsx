@@ -9,6 +9,7 @@ import History from './pages/History.jsx';
 import Insights from './pages/Insights.jsx';
 import Wellness from './pages/Wellness.jsx';
 import Navbar from './components/Navbar.jsx';
+import AmbientBackground from './components/AmbientBackground.jsx';
 import { getUserName } from './store.js';
 import './App.css';
 
@@ -54,6 +55,7 @@ export default function App() {
   // Fully authenticated + onboarded
   return (
     <div className="app-shell">
+      <AmbientBackground />
       <Navbar />
       <main className="app-main">
         <Routes>

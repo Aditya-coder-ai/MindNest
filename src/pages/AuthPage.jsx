@@ -5,10 +5,12 @@ import {
   updateProfile,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
 } from 'firebase/auth';
 import { auth } from '../firebase.js';
 import logo from '../assets/logo.png';
-import mascot from '../assets/mascot.png';
+import logoPage from '../assets/logo-page.jpeg';
 import './AuthPage.css';
 
 /* ---------- floating particles (reused from WelcomePage) ---------- */
@@ -59,6 +61,20 @@ export default function AuthPage() {
     emailRef.current?.focus();
   }, [mode]);
 
+  // Handle Google redirect result on page load
+  useEffect(() => {
+    getRedirectResult(auth).then((result) => {
+      if (result?.user) {
+        console.log('Google redirect sign-in success:', result.user.email);
+      }
+    }).catch((err) => {
+      if (err.code && err.code !== 'auth/popup-closed-by-user') {
+        console.error('Google redirect error:', err.code, err.message);
+        setError(`Google sign-in failed: ${err.code}`);
+      }
+    });
+  }, []);
+
   const toggleMode = () => {
     setMode((m) => (m === 'login' ? 'signup' : 'login'));
     setError('');
@@ -100,11 +116,31 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (err) {
-      if (err.code !== 'auth/popup-closed-by-user') {
-        setError('Google sign-in failed. Try again.');
+      // Try popup first, fall back to redirect
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (popupErr) {
+        if (
+          popupErr.code === 'auth/popup-blocked' ||
+          popupErr.code === 'auth/cancelled-popup-request'
+        ) {
+          // Popup was blocked — use redirect instead
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        throw popupErr;
       }
+    } catch (err) {
+      console.error('Google Sign-In error:', err.code, err.message);
+      if (err.code === 'auth/popup-closed-by-user') return;
+      if (err.code === 'auth/unauthorized-domain')
+        setError('This domain is not authorized. Add it in Firebase Console → Auth → Settings → Authorized domains.');
+      else if (err.code === 'auth/operation-not-allowed')
+        setError('Google Sign-In not enabled. Enable in Firebase Console → Auth → Sign-in method.');
+      else if (err.code === 'auth/internal-error')
+        setError('Internal error — check Firebase Console configuration and try again.');
+      else
+        setError(`Google sign-in failed: ${err.code || err.message}`);
     } finally {
       setLoading(false);
     }
@@ -121,12 +157,12 @@ export default function AuthPage() {
 
       {/* Mascot — left side (pointing right toward form) */}
       <div className="auth-mascot auth-mascot-left" aria-hidden="true">
-        <img src={mascot} alt="" className="mascot-img" />
+        <img src={logoPage} alt="" className="mascot-img" />
       </div>
 
       {/* Mascot — right side (flipped, pointing left toward form) */}
       <div className="auth-mascot auth-mascot-right" aria-hidden="true">
-        <img src={mascot} alt="" className="mascot-img" />
+        <img src={logoPage} alt="" className="mascot-img" />
       </div>
 
       <div className="auth-container">

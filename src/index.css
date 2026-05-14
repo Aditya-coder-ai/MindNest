@@ -117,6 +117,159 @@
   --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
+/* ===== Dark Theme (Default) ===== */
+  :root {
+    --bg-primary: #0f0b15;
+    --bg-secondary: #1a1425;
+    --bg-card: #1e1730;
+    --bg-card-hover: #251e3a;
+
+    --purple-50: #1e1730;
+    --purple-100: #2a2040;
+    --purple-200: #3d2d5c;
+    --purple-300: #6b4d8a;
+    --purple-400: #9b7bbd;
+    --purple-500: #b794d6;
+    --purple-600: #d4b5f0;
+    --purple-700: #e8d5ff;
+
+    --coral-50: #2a1a1e;
+    --coral-100: #3d2028;
+    --coral-200: #5c3040;
+    --coral-300: #d88c94;
+    --coral-400: #e8a4a4;
+    --coral-500: #f0b8c0;
+    --coral-600: #f5c4be;
+    --coral-700: #fde4e0;
+
+    --teal-50: #0d1f1b;
+    --teal-100: #142d28;
+    --teal-200: #1f4a40;
+    --teal-300: #4db8a4;
+    --teal-400: #5dd4be;
+    --teal-500: #6ee7d0;
+    --teal-600: #a3f0e0;
+    --teal-700: #d1faf0;
+
+    --lavender-50: #1a1530;
+    --lavender-100: #241e40;
+    --lavender-200: #3a2e60;
+    --lavender-300: #6b5ba0;
+    --lavender-400: #a78bfa;
+    --lavender-500: #b79cff;
+    --lavender-600: #c8b0ff;
+    --lavender-700: #e0d4ff;
+
+    --mint-100: #0f2920;
+    --mint-200: #164030;
+    --mint-300: #34d399;
+    --mint-400: #4eeab0;
+    --mint-500: #10b981;
+
+    --rose-100: #2a1520;
+    --rose-300: #f87171;
+    --rose-400: #fb7185;
+
+    --amber-100: #2a2010;
+    --amber-300: #fbbf24;
+    --amber-400: #fcd34d;
+
+    --sky-100: #0f1e2e;
+    --sky-300: #38bdf8;
+    --sky-400: #7dd3fc;
+
+    --text-primary: #ede4f5;
+    --text-secondary: #b8a5cc;
+    --text-muted: #7a6890;
+    --text-on-gradient: #ffffff;
+
+    --gradient-primary: linear-gradient(135deg, #e8a4a4 0%, #b794d6 40%, #5dd4be 100%);
+    --gradient-warm: linear-gradient(135deg, #d88c94 0%, #b794d6 50%, #5dd4be 100%);
+    --gradient-hero: linear-gradient(160deg, #0f0b15 0%, #1a1425 40%, #0f1a18 100%);
+    --gradient-card: linear-gradient(145deg, #1e1730 0%, #251e3a 100%);
+    --gradient-btn: linear-gradient(135deg, #9b7bbd 0%, #7b5ea7 100%);
+    --gradient-btn-hover: linear-gradient(135deg, #b794d6 0%, #9b7bbd 100%);
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 40px rgba(155, 123, 189, 0.25);
+  }
+
+  .glass {
+    background: rgba(30, 23, 48, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(155, 123, 189, 0.12);
+  }
+
+  ::selection { background: var(--purple-300); color: #fff; }
+
+  .journal-input, .auth-input, .welcome-input {
+    background: rgba(30, 23, 48, 0.6);
+    border-color: var(--purple-200);
+    color: var(--text-primary);
+  }
+  .journal-input:focus, .auth-input:focus, .welcome-input:focus {
+    background: rgba(37, 30, 58, 0.9);
+    border-color: var(--purple-400);
+    box-shadow: 0 0 0 4px rgba(155, 123, 189, 0.15), 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .card { background: var(--bg-card); border-color: rgba(155, 123, 189, 0.08); }
+  .card:hover { box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); }
+  .result-card { background: var(--gradient-card); }
+  .result-card::before { opacity: 0.2; }
+
+  .mood-btn { background: var(--bg-card); }
+  .mood-btn::before { background: linear-gradient(90deg, transparent, rgba(155, 123, 189, 0.08), transparent); }
+  .mood-btn:hover { border-color: var(--purple-300); }
+  .mood-btn.selected { border-color: var(--purple-400); background: var(--purple-50); box-shadow: var(--shadow-md), 0 0 0 4px rgba(155, 123, 189, 0.12); }
+  .mood-btn.selected .mood-label { color: var(--purple-600); }
+
+  .auth-card { background: rgba(30, 23, 48, 0.85); border-color: rgba(155, 123, 189, 0.1); box-shadow: 0 8px 48px rgba(0, 0, 0, 0.5); }
+  .auth-tabs { background: rgba(15, 11, 21, 0.5); }
+  .auth-google-btn { background: var(--bg-secondary); border-color: var(--purple-200); color: var(--text-primary); }
+  .auth-google-btn:hover { border-color: var(--purple-400); }
+
+  .navbar { background: rgba(15, 11, 21, 0.9); border-color: rgba(155, 123, 189, 0.08); }
+  .profile-dropdown { background: rgba(30, 23, 48, 0.95); border-color: rgba(155, 123, 189, 0.12); box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6); }
+  .profile-logout-btn { background: var(--bg-secondary); border-color: rgba(216, 140, 148, 0.15); }
+  .profile-logout-btn:hover { background: var(--coral-50); }
+
+  .result-insight { background: var(--purple-50); border-left-color: var(--purple-400); }
+  .btn-secondary { background: var(--bg-secondary); color: var(--purple-600); }
+  .btn-secondary:hover { background: var(--purple-50); }
+
+  .metric-bar-bg, .prob-bar-bg { background: var(--bg-secondary); }
+  .probability-grid { background: var(--bg-secondary); }
+  .prob-bar { background: var(--purple-400); }
+
+  .vad-section { background: linear-gradient(135deg, rgba(30, 23, 48, 0.5) 0%, rgba(15, 26, 24, 0.3) 100%); border-color: rgba(155, 123, 189, 0.1); }
+  .rag-section { background: linear-gradient(135deg, rgba(15, 26, 24, 0.3) 0%, rgba(30, 23, 48, 0.3) 100%); border-color: rgba(77, 184, 164, 0.15); }
+  .rag-card { background: var(--bg-card); border-color: rgba(77, 184, 164, 0.1); }
+  .rag-card:hover { box-shadow: 0 4px 16px rgba(77, 184, 164, 0.1); }
+  .rag-category { background: var(--teal-100); color: var(--teal-500); }
+  .rag-relevance { background: var(--purple-50); color: var(--purple-500); }
+
+  .recent-card:hover { border-left-color: var(--purple-400); }
+  .recent-mood { background: var(--purple-50); color: var(--purple-600); }
+  .recent-card:hover .recent-mood { background: var(--purple-100); }
+
+  .ai-online { background: linear-gradient(135deg, rgba(77, 184, 164, 0.15), rgba(155, 123, 189, 0.15)); color: var(--teal-400); border-color: rgba(77, 184, 164, 0.25); }
+  .ai-offline { background: rgba(251, 191, 36, 0.1); color: var(--amber-300); border-color: rgba(251, 191, 36, 0.2); }
+  .ai-checking { background: var(--purple-50); color: var(--text-muted); border-color: var(--purple-200); }
+
+  .stress-low { background: var(--teal-100); color: var(--teal-500); }
+  .stress-moderate { background: var(--amber-100); color: var(--amber-300); }
+  .stress-high { background: var(--coral-50); color: var(--coral-400); }
+
+  .orb-1 { opacity: 0.15; }
+  .orb-2 { opacity: 0.12; }
+  .orb-3 { opacity: 0.08; }
+  .particle { background: var(--purple-400); }
+
 /* ===== Reset & Base ===== */
 *,
 *::before,

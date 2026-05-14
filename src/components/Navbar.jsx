@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase.js';
 import logo from '../assets/logo.png';
@@ -13,6 +14,8 @@ const NAV_ITEMS = [
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const user = auth.currentUser;
+  const [showProfile, setShowProfile] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -45,15 +48,60 @@ export default function Navbar() {
           </li>
         ))}
       </ul>
-      <button
-        className="navbar-logout"
-        onClick={handleLogout}
-        title="Sign Out"
-        id="logout-btn"
-      >
-        <span className="logout-icon">🚪</span>
-        <span className="logout-label">Logout</span>
-      </button>
+
+      {/* User Profile Button */}
+      <div className="navbar-user-wrap">
+        <button
+          className="navbar-avatar-btn"
+          onClick={() => setShowProfile(!showProfile)}
+          title={user?.displayName || user?.email || 'Profile'}
+          id="profile-btn"
+        >
+          {user?.photoURL ? (
+            <img src={user.photoURL} alt="" className="navbar-avatar-img" referrerPolicy="no-referrer" />
+          ) : (
+            <span className="navbar-avatar-fallback">
+              {(user?.displayName || user?.email || '?')[0].toUpperCase()}
+            </span>
+          )}
+        </button>
+
+        {/* Profile Dropdown */}
+        {showProfile && (
+          <div className="profile-dropdown glass scale-in" id="profile-dropdown">
+            <div className="profile-header">
+              {user?.photoURL ? (
+                <img src={user.photoURL} alt="" className="profile-photo" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="profile-photo-fallback">
+                  {(user?.displayName || user?.email || '?')[0].toUpperCase()}
+                </div>
+              )}
+              <div className="profile-info">
+                <p className="profile-name">{user?.displayName || 'MindNest User'}</p>
+                <p className="profile-email">{user?.email || ''}</p>
+              </div>
+            </div>
+            <div className="profile-meta">
+              <div className="profile-meta-item">
+                <span>🆔</span>
+                <span className="profile-uid">{user?.uid?.slice(0, 12)}…</span>
+              </div>
+              <div className="profile-meta-item">
+                <span>📅</span>
+                <span>Joined {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : '—'}</span>
+              </div>
+              <div className="profile-meta-item">
+                <span>🔐</span>
+                <span>{user?.providerData?.[0]?.providerId === 'google.com' ? 'Google Account' : 'Email & Password'}</span>
+              </div>
+            </div>
+            <button className="profile-logout-btn" onClick={handleLogout} id="dropdown-logout-btn">
+              🚪 Sign Out
+            </button>
+          </div>
+        )}
+      </div>
     </nav>
   );
 }
