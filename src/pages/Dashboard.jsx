@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   getUserName,
   analyzeMoodAI,
@@ -7,7 +7,12 @@ import {
   getWeeklyData,
   getAllEntries,
 } from '../store.js';
+import { recordStreak, getMilestoneMessage } from '../data/streaks.js';
 import MoodGraph from '../components/MoodGraph.jsx';
+import DailyQuote from '../components/DailyQuote.jsx';
+import StreakDisplay from '../components/StreakDisplay.jsx';
+import BreathingCircle from '../components/BreathingCircle.jsx';
+import Confetti from '../components/Confetti.jsx';
 import './Dashboard.css';
 
 const MOODS = [
@@ -42,6 +47,9 @@ export default function Dashboard() {
   const [aiOnline, setAiOnline] = useState(null); // null=checking, true/false
   const [weeklyData, setWeeklyData] = useState([]);
   const [recentEntries, setRecentEntries] = useState([]);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [milestoneMsg, setMilestoneMsg] = useState('');
+  const [streakKey, setStreakKey] = useState(0); // force re-render of StreakDisplay
   const resultRef = useRef(null);
 
   // Check AI backend and load initial data on mount
@@ -54,6 +62,11 @@ export default function Dashboard() {
       setWeeklyData(getWeeklyData(entries));
     }
     init();
+  }, []);
+
+  const handleConfettiComplete = useCallback(() => {
+    setShowConfetti(false);
+    setMilestoneMsg('');
   }, []);
 
   const handleAnalyze = async () => {
@@ -82,6 +95,14 @@ export default function Dashboard() {
       setWeeklyData(getWeeklyData(saved));
       setRecentEntries(saved.slice(0, 3));
 
+      // Record streak and check for milestones
+      const { isMilestone, milestoneValue } = recordStreak();
+      setStreakKey(k => k + 1); // force StreakDisplay refresh
+      if (isMilestone) {
+        setShowConfetti(true);
+        setMilestoneMsg(getMilestoneMessage(milestoneValue));
+      }
+
       setTimeout(() => {
         resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -100,6 +121,16 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard fade-in" id="dashboard-page">
+      {/* Confetti celebration */}
+      <Confetti active={showConfetti} onComplete={handleConfettiComplete} />
+
+      {/* Milestone toast */}
+      {milestoneMsg && (
+        <div className="milestone-toast scale-in" id="milestone-toast">
+          <p>{milestoneMsg}</p>
+        </div>
+      )}
+
       {/* ─── AI Status Indicator ─── */}
       <div className="ai-status-bar slide-up">
         {aiOnline === null ? (
@@ -120,8 +151,24 @@ export default function Dashboard() {
         <p className="greeting-sub">How are you feeling today?</p>
       </section>
 
+      {/* ─── Daily Quote ─── */}
+      <section className="daily-quote-section slide-up stagger-1">
+        <DailyQuote />
+      </section>
+
+      {/* ─── Streak & Breathing Row ─── */}
+      <section className="wellness-row slide-up stagger-2">
+        <div className="wellness-row-item">
+          <StreakDisplay key={streakKey} />
+        </div>
+        <div className="wellness-row-item breathing-card card">
+          <h3 className="section-title breathing-title">🫧 Breathe</h3>
+          <BreathingCircle compact />
+        </div>
+      </section>
+
       {/* ─── Mood Selector ─── */}
-      <section className="mood-selector slide-up stagger-1" id="mood-selector">
+      <section className="mood-selector slide-up stagger-3" id="mood-selector">
         <div className="mood-grid">
           {MOODS.map((m) => (
             <button
@@ -139,11 +186,15 @@ export default function Dashboard() {
       </section>
 
       {/* ─── Journal ─── */}
-      <section className="journal-section slide-up stagger-2" id="journal-section">
-        <div className="card">
+      <section className="journal-section slide-up stagger-4" id="journal-section">
+        <div className="card journal-card">
+          <div className="journal-header">
+            <span className="journal-header-icon">📝</span>
+            <span className="journal-header-text">Journal Entry</span>
+          </div>
           <textarea
             className="journal-input"
-            placeholder="Write about your day…"
+            placeholder="Write about your day, thoughts, feelings…"
             value={journalText}
             onChange={e => setJournalText(e.target.value)}
             rows={4}
@@ -334,7 +385,7 @@ export default function Dashboard() {
       )}
 
       {/* ─── Mood Graph ─── */}
-      <section className="graph-section slide-up stagger-3" id="mood-graph-section">
+      <section className="graph-section slide-up stagger-5" id="mood-graph-section">
         <div className="card">
           <h3 className="section-title">📊 Weekly Mood Trend</h3>
           <MoodGraph data={weeklyData} />
@@ -343,7 +394,7 @@ export default function Dashboard() {
 
       {/* ─── Recent Entries ─── */}
       {recentEntries.length > 0 && (
-        <section className="recent-section slide-up stagger-4" id="recent-entries">
+        <section className="recent-section slide-up stagger-6" id="recent-entries">
           <h3 className="section-title">📝 Recent Entries</h3>
           <div className="recent-list">
             {recentEntries.map((entry, i) => (

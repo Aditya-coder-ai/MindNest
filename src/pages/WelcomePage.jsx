@@ -48,10 +48,10 @@ export default function WelcomePage({ onStart }) {
 
   const handleGetStarted = () => setStep(1);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const trimmed = name.trim() || 'Friend';
-    setUserName(trimmed);
+    await setUserName(trimmed);
     onStart();
   };
 
