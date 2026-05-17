@@ -1,73 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { getUserName } from '../store.js';
+import { getUserName, checkAIAvailable, sendWellnessMessage } from '../store.js';
 import './Wellness.css';
-
-/* ------- Simple AI-style responses ------- */
-const RESPONSES = {
-  overwhelmed: [
-    "I hear you. Feeling overwhelmed is really tough. Take a deep breath — inhale for 4 seconds, hold for 4, exhale for 4. You've handled hard things before, and you can handle this too. 💜",
-    "It sounds like a lot is on your plate. Try writing down everything that's weighing on you, then tackle just one small thing. Progress, not perfection. 🌱",
-  ],
-  stressed: [
-    "Stress is your body's way of saying you care. But let's give it some relief — try the 5-4-3-2-1 grounding technique: name 5 things you see, 4 you hear, 3 you feel, 2 you smell, 1 you taste. 🧘",
-    "A 10-minute walk outside can reduce stress hormones by 20%. Even if you can't go outside, stretching at your desk helps! 🌿",
-  ],
-  sad: [
-    "It's completely okay to feel sad. Your emotions are valid. Be kind to yourself right now — you deserve the same compassion you'd give a friend. 🫂",
-    "When sadness visits, try to do one small comforting thing: a warm drink, a favorite song, or just resting. You don't have to be strong all the time. 💛",
-  ],
-  anxious: [
-    "Anxiety often comes from worrying about the future. Let's bring you back to now: what's one thing you can control right now? Focus on that. The rest can wait. 🌊",
-    "Try this: place your hand on your chest. Feel your heartbeat. You're here, you're alive, you're safe. Take it one moment at a time. 💜",
-  ],
-  lonely: [
-    "Loneliness can be so heavy, but it doesn't mean you're alone in the world. Consider reaching out to someone — even a small 'hey, how are you?' can open a door. 💚",
-    "Sometimes journaling can help when you feel lonely. Write a letter to your future self — they'll appreciate knowing what you went through. 📝",
-  ],
-  angry: [
-    "Anger is a signal that something matters to you. That's not wrong — but let's channel it. Try clenching your fists for 10 seconds, then releasing. Feel the tension leave. 🔥",
-    "Before reacting, try the STOP technique: Stop, Take a breath, Observe your feelings, Proceed with awareness. You've got this. 🧠",
-  ],
-  happy: [
-    "That's wonderful to hear! 🎉 Savor this feeling — positive moments are like sunlight for your mental health. What made you feel this way?",
-    "Joy is contagious! Consider sharing this feeling with someone you care about — spreading happiness amplifies it. ✨",
-  ],
-  sleep: [
-    "Sleep is so important for emotional balance. Try a digital sunset — turn off screens 30 minutes before bed, dim the lights, and do some gentle reading or stretching. 🌙",
-    "If your mind races at bedtime, try a 'brain dump': write down everything on your mind before you lie down. It helps clear the mental clutter. 📝",
-  ],
-  default: [
-    "Thank you for sharing that with me. Your feelings are always valid. Remember: taking the time to check in with yourself is already a form of self-care. 🌿",
-    "I'm here to listen. Mental wellness is a journey, not a destination. Every small step you take counts. What else is on your mind? 💜",
-    "Self-awareness is the first step to emotional growth. The fact that you're here, reflecting on how you feel — that's powerful. 🌱",
-  ],
-};
-
-function getResponse(text) {
-  const lower = text.toLowerCase();
-  const keyMap = {
-    overwhelmed: ['overwhelm', 'too much', 'can\'t handle', 'breaking down', 'falling apart'],
-    stressed: ['stress', 'pressure', 'tense', 'deadline', 'exam', 'work'],
-    sad: ['sad', 'cry', 'tears', 'depressed', 'down', 'unhappy', 'grief', 'miss'],
-    anxious: ['anxious', 'anxiety', 'worried', 'worry', 'panic', 'fear', 'scared', 'nervous'],
-    lonely: ['lonely', 'alone', 'isolated', 'no one', 'nobody', 'no friends'],
-    angry: ['angry', 'mad', 'furious', 'hate', 'frustrated', 'annoyed', 'irritated'],
-    happy: ['happy', 'great', 'amazing', 'wonderful', 'good', 'excited', 'grateful'],
-    sleep: ['sleep', 'insomnia', 'tired', 'rest', 'exhausted', 'can\'t sleep', 'awake'],
-  };
-
-  for (const [key, keywords] of Object.entries(keyMap)) {
-    if (keywords.some(kw => lower.includes(kw))) {
-      const pool = RESPONSES[key];
-      return pool[Math.floor(Math.random() * pool.length)];
-    }
-  }
-
-  const pool = RESPONSES.default;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-const getRandomDelay = () => 800 + Math.random() * 800;
 
 const QUICK_PROMPTS = [
   "I feel overwhelmed",
@@ -83,31 +16,56 @@ export default function Wellness() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: `Hi ${name}! 👋 I'm your wellness companion. Tell me how you're feeling, and I'll offer supportive guidance. Remember, I'm here to help, not replace professional care. 💜`,
+      text: `Hi ${name}! I'm your wellness companion. Tell me how you're feeling, and I'll offer supportive guidance. I'm here to support you, not replace professional care.`,
     },
   ]);
   const [input, setInput] = useState('');
   const [typing, setTyping] = useState(false);
+  const [aiOnline, setAiOnline] = useState(null);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, typing]);
 
-  const sendMessage = (text) => {
-    if (!text.trim()) return;
-    const userMsg = { role: 'user', text: text.trim() };
+  useEffect(() => {
+    async function init() {
+      const available = await checkAIAvailable();
+      setAiOnline(available);
+    }
+    init();
+  }, []);
+
+  const sendMessage = async (text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+
+    const userMsg = { role: 'user', text: trimmed };
+    const history = [...messages, userMsg].map(({ role, text: content }) => ({
+      role,
+      text: content,
+    }));
+
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setTyping(true);
 
-    // Simulate AI thinking
-    const delay = getRandomDelay();
-    setTimeout(() => {
-      const response = getResponse(text);
-      setMessages(prev => [...prev, { role: 'assistant', text: response }]);
+    try {
+      const response = await sendWellnessMessage(trimmed, history, name);
+      setMessages(prev => [...prev, { role: 'assistant', text: response.reply }]);
+    } catch (error) {
+      console.error('Wellness chat failed:', error);
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          text: "I couldn't reach the wellness service right now. Please make sure the AI backend is running and try again.",
+        },
+      ]);
+      setAiOnline(false);
+    } finally {
       setTyping(false);
-    }, delay);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -119,7 +77,9 @@ export default function Wellness() {
     <div className="wellness fade-in" id="wellness-page">
       <header className="page-header slide-up">
         <h1 className="page-title">💚 Wellness Assistant</h1>
-        <p className="page-sub">Your supportive AI companion</p>
+        <p className="page-sub">
+          {aiOnline === false ? 'Backend offline' : 'Gemini-powered supportive companion'}
+        </p>
       </header>
 
       {/* Chat area */}

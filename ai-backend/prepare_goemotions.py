@@ -32,6 +32,11 @@ import csv
 import urllib.request
 import io
 
+if sys.stdout.encoding.lower() != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr.encoding.lower() != 'utf-8':
+    sys.stderr.reconfigure(encoding='utf-8')
+
 import pandas as pd
 import numpy as np
 
@@ -64,8 +69,11 @@ GOEMOTIONS_LABELS = [
 ]
 
 # ─── GoEmotions → MindNest 10-Emotion Mapping ───────────────────
-# Only map emotions with clear psychological proximity.
-# Ambiguous labels are excluded entirely for higher data quality.
+# Improved mapping with psychologically tighter groupings.
+# Key changes from v1:
+#   - EXCLUDED "neutral" (55k generic comments were drowning "calm")
+#   - Added more sources for under-represented categories
+#   - Better psychological alignment for tired, lonely, frustrated
 EMOTION_MAP = {
     # → happy: positive high-energy emotions
     "joy":        "happy",
@@ -78,6 +86,7 @@ EMOTION_MAP = {
     "sadness":        "sad",
     "grief":          "sad",
     "disappointment": "sad",
+    "remorse":        "sad",
 
     # → angry: hostility, irritation, disgust
     "anger":      "angry",
@@ -87,40 +96,35 @@ EMOTION_MAP = {
     # → anxious: fear, worry, nervousness
     "fear":         "anxious",
     "nervousness":  "anxious",
+    "confusion":    "anxious",
 
-    # → calm: neutral, relief, tranquil acceptance
-    "neutral":   "calm",
+    # → calm: relief, tranquil acceptance, approval
+    # NOTE: "neutral" is EXCLUDED — it floods this class with generic text
     "relief":    "calm",
     "approval":  "calm",
-
-    # → tired: exhaustion proxies — remorse weighs you down
-    "remorse":      "tired",
 
     # → grateful: thankfulness, kindness, admiration
     "gratitude":  "grateful",
     "caring":     "grateful",
     "admiration": "grateful",
 
-    # → lonely: social disconnection, feeling embarrassed/left out
+    # → lonely: social disconnection, feeling left out
     "embarrassment": "lonely",
+    "realization":   "lonely",
 
     # → excited: high arousal positive anticipation
     "excitement": "excited",
     "surprise":   "excited",
     "desire":     "excited",
+    "curiosity":  "excited",
 
     # → frustrated: blocked goals, disapproval
     "disapproval": "frustrated",
-
-    # EXCLUDED (too ambiguous for clean mapping):
-    # "confusion"   - could be tired, anxious, or frustrated
-    # "curiosity"   - neutral/positive, doesn't fit any negative category well
-    # "realization" - neutral cognitive process, not emotional
 }
 
 # Target samples per emotion (for balanced dataset)
-TARGET_PER_EMOTION = 800
-MAX_TOTAL_SAMPLES = 10000
+TARGET_PER_EMOTION = 1500
+MAX_TOTAL_SAMPLES = 20000
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -322,6 +326,75 @@ def main():
 
     # Step 3: Extract emotions and map to MindNest categories
     processed_df = extract_emotions(raw_df)
+
+    # Step 3b: Add synthetic "tired" data
+    # GoEmotions has no natural tiredness/exhaustion category, so we generate
+    # realistic training samples to avoid relying on poor proxy mappings.
+    tired_templates = [
+        "I am so tired today I can barely keep my eyes open",
+        "Feeling completely exhausted after a long day at work",
+        "I need to sleep I am running on empty right now",
+        "So drained and fatigued I just want to rest",
+        "Burnout is real I have no energy left for anything",
+        "I feel weary and sluggish everything feels like a chore",
+        "Cannot focus anymore my brain is foggy from lack of sleep",
+        "I stayed up too late and now I am paying for it",
+        "Feeling lethargic and drowsy all day long",
+        "My body is aching from exhaustion I need a break",
+        "I have been working nonstop and I am completely spent",
+        "Just want to crawl into bed and sleep for a week",
+        "So sleepy I keep yawning during every meeting",
+        "I feel like a zombie today no amount of coffee helps",
+        "Totally wiped out after that intense workout session",
+        "Running on fumes I desperately need some rest",
+        "I have not slept well in days and it is catching up",
+        "Feeling heavy and slow like my body weighs a ton",
+        "I am too tired to even think straight right now",
+        "My energy is completely depleted I need to recharge",
+        "So fatigued I can not even enjoy my favorite activities",
+        "I have been pushing myself too hard and I am burnt out",
+        "Every morning I wake up still feeling tired and drained",
+        "Insomnia is killing me I toss and turn all night",
+        "I am physically and mentally exhausted beyond words",
+        "Feeling so worn out after taking care of everything today",
+        "I need a vacation I am running on empty and stressed",
+        "My eyes are heavy and I keep nodding off at my desk",
+        "I have zero motivation because I am just too tired",
+        "Another sleepless night has left me feeling terrible",
+        "I crashed on the couch because I had no energy to move",
+        "Overworked and under-rested that is my life right now",
+        "I feel like I have been hit by a truck so exhausted",
+        "Too tired to cook or clean just ordering takeout tonight",
+        "My brain is mush from sleep deprivation and overwork",
+        "I keep hitting snooze because getting up feels impossible",
+        "All I want is a long nap and some peace and quiet",
+        "I pushed through the day but I am absolutely wrecked now",
+        "Feeling low energy and unmotivated just want to rest",
+        "I have been grinding all week and my body is screaming for rest",
+    ]
+
+    # Create multiple paraphrased versions per template for variety
+    import random
+    random.seed(42)
+    tired_records = []
+    prefixes = ["", "Honestly ", "Ugh ", "Man ", "I swear ", "Seriously ", ""]
+    suffixes = ["", " honestly", " it is rough", " I am done", " need help", " so bad", ""]
+    for template in tired_templates:
+        tired_records.append({"text": template, "emotion": "tired"})
+        # Generate ~35 augmented versions per template to reach ~1500
+        for _ in range(35):
+            p = random.choice(prefixes)
+            s = random.choice(suffixes)
+            words = template.split()
+            # Randomly drop 1-2 words for variety
+            if len(words) > 6:
+                drop_idx = random.randint(1, len(words) - 2)
+                words = words[:drop_idx] + words[drop_idx+1:]
+            tired_records.append({"text": p + " ".join(words) + s, "emotion": "tired"})
+
+    tired_df = pd.DataFrame(tired_records)
+    processed_df = pd.concat([processed_df, tired_df], ignore_index=True)
+    print(f"\n   🔧 Added {len(tired_df)} synthetic 'tired' samples")
 
     # Show distribution before balancing
     print("\n   Distribution before balancing:")

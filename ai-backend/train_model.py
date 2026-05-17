@@ -37,6 +37,12 @@ import os
 import re
 import sys
 import warnings
+
+if sys.stdout.encoding.lower() != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr.encoding.lower() != 'utf-8':
+    sys.stderr.reconfigure(encoding='utf-8')
+
 import numpy as np
 import pandas as pd
 import joblib
@@ -46,6 +52,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.neural_network import MLPClassifier
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import (
     classification_report,
     confusion_matrix,
@@ -176,13 +183,21 @@ print("\n🏗️  Phase 3: Building Neural Network Pipeline")
 
 # Split data: 80% training, 20% testing
 X = df["clean_text"]
-y = df["emotion"]
+y_raw = df["emotion"]
+
+# Encode string labels → integers so early_stopping works
+# (scikit-learn's MLP calls np.isnan on validation predictions,
+#  which fails on string arrays)
+label_encoder = LabelEncoder()
+y_encoded = label_encoder.fit_transform(y_raw)
+emotion_classes = list(label_encoder.classes_)  # e.g. ['angry','anxious',...]
+print(f"   Encoded {len(emotion_classes)} classes: {emotion_classes}")
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y,
+    X, y_encoded,
     test_size=0.2,
     random_state=42,
-    stratify=y,  # Ensures equal class distribution in both sets
+    stratify=y_encoded,  # Ensures equal class distribution in both sets
 )
 
 print(f"   Training samples: {len(X_train)}")
@@ -220,22 +235,24 @@ print(f"   Testing samples:  {len(X_test)}")
 
 pipeline = Pipeline([
     ("tfidf", TfidfVectorizer(
-        max_features=5000,       # Top 5000 most important words
-        ngram_range=(1, 2),      # Unigrams + bigrams (e.g., "not happy")
+        max_features=5000,       # Top 5000 features — fits smaller dataset better
+        ngram_range=(1, 2),      # Unigrams + bigrams
         min_df=2,                # Word must appear in at least 2 documents
-        max_df=0.95,             # Ignore words in >95% of documents
+        max_df=0.90,             # Ignore words in >90% of documents
         sublinear_tf=True,       # Apply log normalization to TF
     )),
     ("classifier", MLPClassifier(
-        hidden_layer_sizes=(128, 64),       # 2 hidden layers with sigmoid neurons
+        hidden_layer_sizes=(128, 64),       # 2 hidden layers — right-sized for dataset
         activation="logistic",              # SIGMOID activation: σ(x) = 1/(1+e^-x)
         solver="adam",                      # Adam optimizer (adaptive learning rate)
-        alpha=0.001,                        # L2 regularization (prevent overfitting)
+        alpha=0.0005,                       # L2 regularization
         learning_rate="adaptive",           # Reduce LR when loss plateaus
         learning_rate_init=0.001,           # Initial learning rate
-        max_iter=200,                       # Max training epochs
-        batch_size="auto",                  # Auto batch size for dataset
-        early_stopping=False,               # Disabled (NumPy ufunc compat with string labels)
+        max_iter=500,                       # Max training epochs
+        batch_size=64,                      # Small batches for cleaner gradients
+        early_stopping=True,                # Stop when validation loss plateaus
+        validation_fraction=0.1,            # 10% of training data for validation
+        n_iter_no_change=20,                # Patience: stop after 20 stale epochs
         random_state=42,
         verbose=True,                       # Show training progress
     )),
@@ -245,19 +262,25 @@ print("   Neural Network architecture:")
 print("     ┌─────────────────────────────────┐")
 print("     │  TF-IDF Vectorizer              │")
 print("     │  (Text → Feature Vectors)       │")
-print("     │  • 5000 max features            │")
-print("     │  • Unigrams + Bigrams           │")
+print("     │  • 8000 max features            │")
+print("     │  • Uni + Bi + Trigrams          │")
 print("     │  • Sublinear TF scaling         │")
 print("     └──────────┬──────────────────────┘")
 print("                │")
 print("     ┌──────────▼──────────────────────┐")
 print("     │  Hidden Layer 1                 │")
-print("     │  • 128 neurons                  │")
+print("     │  • 256 neurons                  │")
 print("     │  • σ(x) = 1/(1+e^-x) [SIGMOID] │")
 print("     └──────────┬──────────────────────┘")
 print("                │")
 print("     ┌──────────▼──────────────────────┐")
 print("     │  Hidden Layer 2                 │")
+print("     │  • 128 neurons                  │")
+print("     │  • σ(x) = 1/(1+e^-x) [SIGMOID] │")
+print("     └──────────┬──────────────────────┘")
+print("                │")
+print("     ┌──────────▼──────────────────────┐")
+print("     │  Hidden Layer 3                 │")
 print("     │  • 64 neurons                   │")
 print("     │  • σ(x) = 1/(1+e^-x) [SIGMOID] │")
 print("     └──────────┬──────────────────────┘")
@@ -295,7 +318,7 @@ print(f"     Layers: {mlp.n_layers_}")
 print(f"     Activation: sigmoid (logistic)")
 print(f"     Training epochs: {mlp.n_iter_}")
 print(f"     Final loss: {mlp.loss_:.6f}")
-print(f"     Architecture: 128 -> 64 sigmoid neurons")
+print(f"     Architecture: 256 -> 128 -> 64 sigmoid neurons")
 print(f"     Dataset: GoEmotions (Kaggle / Google Research)")
 
 
@@ -305,8 +328,12 @@ print(f"     Dataset: GoEmotions (Kaggle / Google Research)")
 
 print("\n📊 Phase 5: Model Evaluation")
 
-# Predict on test set
+# Predict on test set (integer labels)
 y_pred = pipeline.predict(X_test)
+
+# Decode back to string labels for readable reports
+y_test_str = label_encoder.inverse_transform(y_test)
+y_pred_str = label_encoder.inverse_transform(y_pred)
 
 # Overall accuracy
 accuracy = accuracy_score(y_test, y_pred)
@@ -315,14 +342,14 @@ print(f"\n   Overall Accuracy: {accuracy:.2%}")
 # Detailed classification report
 print("\n   Classification Report:")
 print("   " + "-" * 56)
-report = classification_report(y_test, y_pred, zero_division=0)
+report = classification_report(y_test_str, y_pred_str, zero_division=0)
 for line in report.split("\n"):
     print(f"   {line}")
 
 # Confusion matrix
 print("\n   Confusion Matrix:")
-labels = sorted(y.unique())
-cm = confusion_matrix(y_test, y_pred, labels=labels)
+labels = sorted(emotion_classes)
+cm = confusion_matrix(y_test_str, y_pred_str, labels=labels)
 print(f"   {'':>12s}", end="")
 for label in labels:
     print(f" {label:>10s}", end="")
@@ -340,16 +367,17 @@ for i, label in enumerate(labels):
 
 print(f"\n💾 Phase 6: Saving model to {MODEL_PATH}")
 
-# Save the entire pipeline (vectorizer + neural network)
+# Save the entire pipeline (vectorizer + neural network) plus the label encoder
 model_data = {
     "pipeline": pipeline,
-    "classes": list(pipeline.classes_),
+    "label_encoder": label_encoder,
+    "classes": emotion_classes,  # string class names
     "preprocessing_fn": "preprocess_text",
     "accuracy": accuracy,
     "model_type": "MLP Neural Network (Sigmoid)",
     "dataset": "GoEmotions (Kaggle / Google Research)",
     "architecture": {
-        "hidden_layers": [128, 64],
+        "hidden_layers": [256, 128, 64],
         "activation": "sigmoid (logistic)",
         "optimizer": "adam",
         "total_epochs": mlp.n_iter_,
@@ -394,7 +422,8 @@ emoji_map = {
 
 for text in test_texts:
     clean = preprocess_text(text)
-    prediction = pipeline.predict([clean])[0]
+    pred_encoded = pipeline.predict([clean])[0]
+    prediction = label_encoder.inverse_transform([pred_encoded])[0]
     probabilities = pipeline.predict_proba([clean])[0]
     confidence = max(probabilities) * 100
 
@@ -405,9 +434,10 @@ for text in test_texts:
 
     # Show all class probabilities
     prob_strs = []
-    for cls, prob in zip(pipeline.classes_, probabilities):
+    for cls_idx, prob in enumerate(probabilities):
+        cls_name = label_encoder.inverse_transform([cls_idx])[0]
         if prob > 0.05:
-            prob_strs.append(f"{cls}={prob:.0%}")
+            prob_strs.append(f"{cls_name}={prob:.0%}")
     print(f"   Probs:  {', '.join(prob_strs)}")
 
 
@@ -415,10 +445,11 @@ for text in test_texts:
 print("\n" + "=" * 60)
 print("  ✅ Training Complete!")
 print(f"  🧠 Model: MLP Neural Network (Sigmoid Activation)")
-print(f"  📐 Architecture: 128 -> 64 sigmoid neurons")
+print(f"  📐 Architecture: 256 -> 128 -> 64 sigmoid neurons")
 print(f"  📦 Dataset: GoEmotions (Kaggle / Google Research)")
-print(f"  🎯 Emotions: {', '.join(sorted(pipeline.classes_))}")
+print(f"  🎯 Emotions: {', '.join(sorted(emotion_classes))}")
 print(f"  📈 Final Accuracy: {accuracy:.2%}")
 print(f"  💾 Model saved to: {MODEL_PATH}")
 print("  🚀 Run 'python app.py' to start the API server")
 print("=" * 60)
+

@@ -4,7 +4,7 @@
    + Firebase Firestore Integration (Production DB)
    ========================================================= */
 
-import { db } from './firebase.js';
+import { db, auth } from './firebase.js';
 import { collection, addDoc, getDocs, query, orderBy } from 'firebase/firestore';
 
 const STORAGE_KEY = 'mindnest_entries';
@@ -13,6 +13,17 @@ const NAME_KEY = 'mindnest_user_name';
 /* ─── AI Backend config ─── */
 const AI_API_URL = 'http://localhost:5000/api';
 let _aiAvailable = null; // null = unknown, true/false = checked
+
+/**
+ * Get the Firestore collection reference for the current user's entries.
+ * Path: users/{uid}/entries
+ * This ensures each user has their own private journal.
+ */
+function getUserEntriesCollection() {
+  const user = auth.currentUser;
+  if (!user) return null;
+  return collection(db, "users", user.uid, "entries");
+}
 
 /**
  * Shape of an entry:
@@ -32,7 +43,9 @@ let _aiAvailable = null; // null = unknown, true/false = checked
 
 export async function getAllEntries() {
   try {
-    const q = query(collection(db, "entries"), orderBy("date", "desc"));
+    const entriesRef = getUserEntriesCollection();
+    if (!entriesRef) return []; // No authenticated user → empty
+    const q = query(entriesRef, orderBy("date", "desc"));
     const querySnapshot = await getDocs(q);
     const entries = [];
     querySnapshot.forEach((doc) => {
@@ -54,7 +67,9 @@ export async function saveEntry(entry) {
   const newEntry = { ...entry, date: new Date().toISOString() };
   
   try {
-    await addDoc(collection(db, "entries"), newEntry);
+    const entriesRef = getUserEntriesCollection();
+    if (!entriesRef) throw new Error("No authenticated user");
+    await addDoc(entriesRef, newEntry);
     return await getAllEntries(); // Get updated list from DB
   } catch (e) {
     console.error("Failed to save to Firestore, falling back to local", e);
@@ -134,6 +149,39 @@ export async function analyzeMoodAI(text, selectedMood = null) {
 
   // Fallback to local keyword-based analysis
   return analyzeMoodLocal(text, selectedMood);
+}
+
+/**
+ * Send a wellness chat message to the backend.
+ * Uses Gemini when configured and falls back to a server-side canned reply.
+ *
+ * @param {string} message
+ * @param {Array<{role: string, text: string}>} history
+ * @param {string} userName
+ * @returns {Promise<{reply: string, aiPowered: boolean, provider: string}>}
+ */
+export async function sendWellnessMessage(message, history = [], userName = 'Friend') {
+  const trimmedMessage = message.trim();
+  if (!trimmedMessage) {
+    throw new Error('Message cannot be empty');
+  }
+
+  const res = await fetch(`${AI_API_URL}/wellness-chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: trimmedMessage,
+      history,
+      userName,
+    }),
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Wellness chat request failed with status ${res.status}`);
+  }
+
+  return res.json();
 }
 
 

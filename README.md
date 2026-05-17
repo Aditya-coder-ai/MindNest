@@ -6,6 +6,7 @@ MindNest is a personalized, AI-powered mood companion and journaling web applica
 - **Daily Mood Tracking**: Log your feelings with a rich, interactive interface using tailored emojis and descriptive mood labels.
 - **Journaling**: A private space to write down your thoughts.
 - **AI Wellness Assistant**: A supportive chat companion that provides quick, empathetic guidance based on the emotions you express.
+- **Gemini GenAI Chat**: The wellness assistant now uses Gemini through the Flask backend.
 - **Insights & Analytics**: Visualize your mood trends over time with beautiful, interactive graphs using Chart.js.
 - **Responsive Design**: Carefully crafted, modern UI that works perfectly across desktops, tablets, and mobile devices.
 - **Firebase Integration**: Supports cloud persistence so you don't lose your data.
@@ -35,15 +36,40 @@ Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
    npm install
    ```
 
-3. **Configure Firebase**:
+3. **Set up the AI backend**:
+   ```bash
+   cd ai-backend
+   pip install -r requirements.txt
+   ```
+
+4. **Configure Gemini GenAI**:
+   Set a Gemini API key before starting the backend.
+
+   Windows PowerShell:
+   ```powershell
+   $env:GEMINI_API_KEY="your_api_key_here"
+   ```
+
+   Optional:
+   ```powershell
+   $env:GEMINI_MODEL="gemini-2.5-flash"
+   ```
+
+5. **Configure Firebase**:
    Ensure your `firebase-config.json` is correctly set up with your Firebase project credentials.
 
-4. **Start the development server**:
+6. **Start the AI backend**:
+   ```bash
+   cd ai-backend
+   python app.py
+   ```
+
+7. **Start the development server**:
    ```bash
    npm run dev
    ```
 
-5. **Open in browser**:
+8. **Open in browser**:
    Navigate to `http://localhost:5173` to view the app in your browser.
 
 ## Available Scripts

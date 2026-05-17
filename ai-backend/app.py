@@ -20,7 +20,17 @@
 
 import os
 import re
+import sys
 import random
+
+if sys.stdout.encoding.lower() != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr.encoding.lower() != 'utf-8':
+    sys.stderr.reconfigure(encoding='utf-8')
+
+
+from dotenv import load_dotenv
+load_dotenv()  # Load .env file (for GEMINI_API_KEY etc.)
 
 import joblib
 import numpy as np
@@ -28,6 +38,10 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+try:
+    from google import genai
+except ImportError:
+    genai = None
 
 # ─── VAD Scorer ──────────────────────────────────────────────────
 from vad_scorer import compute_vad, positivity_from_vad, stress_from_vad, vad_summary
@@ -53,6 +67,8 @@ CORS(app)  # Allow cross-origin requests from React frontend
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "model", "emotion_classifier.pkl")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mindnest.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -117,16 +133,30 @@ pipeline = model_data["pipeline"]
 model_classes = model_data["classes"]
 model_accuracy = model_data.get("accuracy", 0)
 model_type = model_data.get("model_type", "Unknown")
+label_encoder = model_data.get("label_encoder", None)  # New: for int→string decoding
 
 print(f"[Success] Model loaded successfully!")
 print(f"   Type: {model_type}")
 print(f"   Classes: {model_classes}")
 print(f"   Accuracy: {model_accuracy:.2%}")
+print(f"   Label Encoder: {'✅' if label_encoder else '❌ (legacy model)'}")
 
 # ─── RAG Engine ─────────────────────────────────────────────────
 print("\nInitializing RAG Engine...")
 rag_engine = RAGEngine()
 print(f"   RAG Status: {'✅ Ready' if rag_engine.ready else '❌ Not available'}")
+
+print("\nInitializing Gemini GenAI...")
+gemini_client = None
+if genai and GEMINI_API_KEY:
+    try:
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+        print(f"   Gemini Status: ✅ Ready ({GEMINI_MODEL})")
+    except Exception as exc:
+        print(f"   Gemini Status: ❌ Failed to initialize ({exc})")
+else:
+    reason = "package missing" if not genai else "API key missing"
+    print(f"   Gemini Status: ❌ Unavailable ({reason})")
 
 # ═════════════════════════════════════════════════════════════════
 #  Text Preprocessing (same as training)
@@ -155,6 +185,135 @@ def preprocess_text(text):
     tokens = [t for t in tokens if t not in stop_words and len(t) > 1]
     tokens = [lemmatizer.lemmatize(t) for t in tokens]
     return " ".join(tokens)
+
+
+def contains_crisis_language(text):
+    """Detect phrases that suggest immediate crisis so we can respond safely."""
+    crisis_patterns = [
+        r"\bkill myself\b",
+        r"\bsuicide\b",
+        r"\bend my life\b",
+        r"\bwant to die\b",
+        r"\bself[-\s]?harm\b",
+        r"\bhurt myself\b",
+    ]
+    lowered = (text or "").lower()
+    return any(re.search(pattern, lowered) for pattern in crisis_patterns)
+
+
+WELLNESS_FALLBACK_RESPONSES = {
+    "overwhelmed": [
+        "It sounds like a lot is hitting you at once. Try picking just one small next step and give yourself permission to ignore the rest for a moment.",
+        "Feeling overwhelmed can make everything seem urgent. Pause, take one slow breath, and choose the smallest thing you can do next.",
+    ],
+    "stressed": [
+        "Stress is a sign that a lot is demanding your energy right now. Try a short reset: unclench your jaw, lower your shoulders, and breathe out slowly.",
+        "You are carrying a lot. A 5-minute break, a glass of water, or a short walk can help your body come down a notch.",
+    ],
+    "sad": [
+        "I am sorry things feel heavy right now. Be gentle with yourself and focus on one comforting thing you can do today.",
+        "It is okay to feel sad. Rest, a warm drink, or reaching out to someone you trust can help you feel a little less alone.",
+    ],
+    "anxious": [
+        "Anxiety can pull your mind into the future. Try naming one thing you can control in this moment and put your attention there.",
+        "Take a slow breath in for 4, hold for 4, and breathe out for 6. You do not need to solve everything right now.",
+    ],
+    "lonely": [
+        "Loneliness can feel really heavy. Sending one small message to someone you trust can be a meaningful first step.",
+        "You deserve connection and care. Even a brief check-in with a friend, family member, or community can help.",
+    ],
+    "angry": [
+        "Anger usually points to something important. Before reacting, give your body a minute to cool down with a few slow breaths.",
+        "You are allowed to feel angry. Try stepping away briefly and putting the feeling into words before taking action.",
+    ],
+    "happy": [
+        "I am glad to hear that. Hold onto what made today feel good and see if you can create a little more of it.",
+        "That is wonderful. Savoring good moments can really strengthen your emotional resilience.",
+    ],
+    "sleep": [
+        "Sleep struggles can make everything harder. A simple wind-down routine and less screen time before bed may help.",
+        "If your mind feels busy at night, try writing down what is on your mind before bed so it is not all spinning in your head.",
+    ],
+    "default": [
+        "Thank you for sharing that. I am here with you, and it may help to take things one small step at a time.",
+        "I hear you. What you are feeling matters, and it is okay to slow down and care for yourself right now.",
+    ],
+}
+
+
+def get_wellness_fallback_reply(text):
+    lower = (text or "").lower()
+    key_map = {
+        "overwhelmed": ["overwhelm", "too much", "can't handle", "breaking down", "falling apart"],
+        "stressed": ["stress", "pressure", "tense", "deadline", "exam", "work"],
+        "sad": ["sad", "cry", "tears", "depressed", "down", "unhappy", "grief", "miss"],
+        "anxious": ["anxious", "anxiety", "worried", "worry", "panic", "fear", "scared", "nervous"],
+        "lonely": ["lonely", "alone", "isolated", "no one", "nobody", "no friends"],
+        "angry": ["angry", "mad", "furious", "hate", "frustrated", "annoyed", "irritated"],
+        "happy": ["happy", "great", "amazing", "wonderful", "good", "excited", "grateful"],
+        "sleep": ["sleep", "insomnia", "tired", "rest", "exhausted", "can't sleep", "awake"],
+    }
+
+    for key, keywords in key_map.items():
+        if any(keyword in lower for keyword in keywords):
+            pool = WELLNESS_FALLBACK_RESPONSES[key]
+            return random.choice(pool)
+
+    return random.choice(WELLNESS_FALLBACK_RESPONSES["default"])
+
+
+def generate_wellness_reply(message, history=None, user_name="Friend"):
+    """Generate a supportive wellness reply using Gemini, with safe fallback."""
+    if contains_crisis_language(message):
+        return (
+            "I am really sorry you are going through this. If you might hurt yourself or feel in immediate danger, "
+            "call emergency services now or contact a crisis line right away. If you can, tell a trusted person near you "
+            "what is happening and stay with them while you get support."
+        ), False, "crisis-support"
+
+    history = history or []
+    clipped_history = history[-8:]
+    transcript_lines = []
+    for item in clipped_history:
+        role = "Assistant" if item.get("role") == "assistant" else "User"
+        content = (item.get("text") or "").strip()
+        if content:
+            transcript_lines.append(f"{role}: {content}")
+    transcript = "\n".join(transcript_lines)
+
+    if not gemini_client:
+        return get_wellness_fallback_reply(message), False, "fallback"
+
+    prompt = f"""
+You are MindNest, a supportive wellness companion for {user_name}.
+
+Instructions:
+- Respond with empathy, calm language, and practical emotional support.
+- Keep the response to 2-4 short sentences.
+- Do not diagnose, prescribe medication, or claim to be a therapist.
+- Encourage professional help only when the situation sounds serious.
+- Ask at most one gentle follow-up question.
+- Return plain text only, with no markdown.
+
+Conversation so far:
+{transcript or "No prior conversation."}
+
+User's latest message:
+{message}
+""".strip()
+
+    try:
+        response = gemini_client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=prompt,
+        )
+        reply = (response.text or "").strip()
+        if reply:
+            return reply, True, "gemini"
+    except Exception as exc:
+        print(f"[Wellness Chat] Gemini request failed: {exc}")
+
+    return get_wellness_fallback_reply(message), False, "fallback"
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -336,6 +495,8 @@ def health_check():
         "vad_enabled": True,
         "rag_enabled": rag_engine.ready,
         "rag_documents": len(rag_engine.documents),
+        "gemini_enabled": gemini_client is not None,
+        "gemini_model": GEMINI_MODEL if gemini_client else None,
     })
 
 
@@ -379,14 +540,24 @@ def analyze_mood():
     if text:
         # ── AI Prediction (MLP with sigmoid) ──
         clean_text = preprocess_text(text)
-        prediction = pipeline.predict([clean_text])[0]
+        pred_raw = pipeline.predict([clean_text])[0]
         probabilities = pipeline.predict_proba([clean_text])[0]
         confidence = float(max(probabilities)) * 100
 
+        # Decode prediction: label_encoder maps int→string
+        if label_encoder is not None:
+            prediction = label_encoder.inverse_transform([pred_raw])[0]
+        else:
+            prediction = str(pred_raw)  # Legacy model returns strings directly
+
         # Build probability map
         all_probs = {}
-        for cls, prob in zip(pipeline.classes_, probabilities):
-            all_probs[cls] = round(float(prob) * 100, 1)
+        for cls_idx, prob in enumerate(probabilities):
+            if label_encoder is not None:
+                cls_name = label_encoder.inverse_transform([cls_idx])[0]
+            else:
+                cls_name = str(pipeline.classes_[cls_idx])
+            all_probs[cls_name] = round(float(prob) * 100, 1)
 
         detected = prediction
 
@@ -480,6 +651,26 @@ def rag_query():
     })
 
 
+@app.route("/api/wellness-chat", methods=["POST"])
+def wellness_chat():
+    """Gemini-backed wellness assistant chat endpoint."""
+    data = request.get_json()
+    if not data or not data.get("message", "").strip():
+        return jsonify({"error": "Provide a non-empty 'message' field"}), 400
+
+    reply, ai_powered, provider = generate_wellness_reply(
+        message=data["message"].strip(),
+        history=data.get("history", []),
+        user_name=(data.get("userName") or "Friend").strip() or "Friend",
+    )
+
+    return jsonify({
+        "reply": reply,
+        "aiPowered": ai_powered,
+        "provider": provider,
+    })
+
+
 # ═════════════════════════════════════════════════════════════════
 #  Start Server
 # ═════════════════════════════════════════════════════════════════
@@ -490,12 +681,22 @@ if __name__ == "__main__":
     print(f"  Model: {model_type}")
     print("  VAD Scoring: NRC Lexicon + Sigmoid")
     print(f"  RAG Engine: {'✅ Active' if rag_engine.ready else '❌ Inactive'} ({len(rag_engine.documents)} docs)")
+    print(f"  Gemini Chat: {'✅ Active' if gemini_client else '❌ Inactive'}")
     print("  http://localhost:5000")
     print("  CORS enabled for React frontend")
     print("=" * 50 + "\n")
 
-    app.run(
-        host="0.0.0.0",
-        port=5000,
-        debug=True,
-    )
+    # Use Waitress (production WSGI server) by default
+    try:
+        from waitress import serve
+        print("  🚀 Starting Waitress WSGI server on port 5000...")
+        serve(app, host="0.0.0.0", port=5000, threads=4)
+    except ImportError:
+        print("  ⚠️  Waitress not installed — using Flask dev server.")
+        print("  Install with: pip install waitress")
+        app.run(
+            host="0.0.0.0",
+            port=5000,
+            debug=True,
+            use_reloader=False,
+        )
