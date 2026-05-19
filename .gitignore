@@ -31,3 +31,8 @@ venv/
 ai-backend/data/goemotions_raw/
 ai-backend/instance/
 ai-backend/.env
+
+# Secrets
+firebase-config.json
+.env
+.env.*
