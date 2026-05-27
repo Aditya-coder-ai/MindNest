@@ -1,0 +1,41 @@
+[Unit]
+Description=MindNest AI Backend Service
+After=network.target postgresql.service redis.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+User=mindnest
+Group=www-data
+WorkingDirectory=/opt/mindnest/ai-backend
+
+# Environment
+EnvironmentFile=/opt/mindnest/.env
+Environment="PATH=/opt/mindnest/venv/bin"
+
+# Startup
+ExecStart=/opt/mindnest/venv/bin/gunicorn \
+    --config gunicorn_config.py \
+    --access-logfile - \
+    --error-logfile - \
+    wsgi:app
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=65536
+
+# Security
+PrivateTmp=yes
+NoNewPrivileges=yes
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mindnest-api
+
+[Install]
+WantedBy=multi-user.target

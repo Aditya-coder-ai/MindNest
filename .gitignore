@@ -36,3 +36,4 @@ ai-backend/.env
 firebase-config.json
 .env
 .env.*
+!.env.development

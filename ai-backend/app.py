@@ -1,6 +1,7 @@
 """
 ╔══════════════════════════════════════════════════════════════════╗
 ║              MindNest — AI Mood Analysis API Server              ║
+║                  Production-Ready Enterprise Build                ║
 ║                                                                  ║
 ║  Flask REST API serving:                                         ║
 ║    • MLP Neural Network (sigmoid) for emotion classification    ║
@@ -15,35 +16,46 @@
 ║    POST /api/analyze    — Analyze mood from journal text          ║
 ║    GET  /api/health     — Server health check                    ║
 ║    GET  /api/model-info — Model metadata & accuracy              ║
+║    POST /api/wellness-chat — Wellness assistant chat             ║
+║    POST /api/rag-query  — Direct knowledge base retrieval        ║
 ╚══════════════════════════════════════════════════════════════════╝
 """
 
 import os
 import re
 import sys
-import random
 
+# ─── UTF-8 Encoding ─────────────────────────────────────────────
 if sys.stdout.encoding.lower() != 'utf-8':
     sys.stdout.reconfigure(encoding='utf-8')
 if sys.stderr.encoding.lower() != 'utf-8':
     sys.stderr.reconfigure(encoding='utf-8')
 
-
+# ─── Environment & Configuration ────────────────────────────────
 from dotenv import load_dotenv
-load_dotenv()  # Load .env file (for GEMINI_API_KEY etc.)
+load_dotenv()
 
+from config import get_config
+from logger_config import setup_logging, get_logger
+from error_handlers import handle_errors, validate_request, APIError, log_request
+
+# ─── Core imports ───────────────────────────────────────────────
+import random
 import joblib
 import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
 try:
     from google import genai
 except ImportError:
     genai = None
 
-# ─── VAD Scorer ──────────────────────────────────────────────────
+# ─── VAD & RAG ──────────────────────────────────────────────────
 from vad_scorer import compute_vad, positivity_from_vad, stress_from_vad, vad_summary
 from rag_engine import RAGEngine
 
@@ -59,20 +71,52 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
 # ═════════════════════════════════════════════════════════════════
-#  App Configuration
+#  App Initialization
 # ═════════════════════════════════════════════════════════════════
 
 app = Flask(__name__)
-CORS(app)  # Allow cross-origin requests from React frontend
+config = get_config()
+app.config.from_object(config)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "model", "emotion_classifier.pkl")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+# Setup logging
+logger = setup_logging(app)
+app_logger = get_logger("app")
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mindnest.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# Setup error handlers
+handle_errors(app)
+log_request(app)
+
+# ─── CORS Configuration ──────────────────────────────────────────
+CORS(
+    app,
+    origins=app.config['CORS_ORIGINS'],
+    allow_headers=app.config['CORS_ALLOW_HEADERS'],
+    expose_headers=app.config['CORS_EXPOSE_HEADERS'],
+    supports_credentials=True,
+)
+
+# ─── Rate Limiting ───────────────────────────────────────────────
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri=app.config['RATELIMIT_STORAGE_URL'],
+)
+
+# ─── Database ────────────────────────────────────────────────────
 db = SQLAlchemy(app)
+db_logger = get_logger("database")
+
+# ─── Security Headers ───────────────────────────────────────────
+@app.after_request
+def set_security_headers(response):
+    """Set security headers for all responses."""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    return response
 
 # ═════════════════════════════════════════════════════════════════
 #  Database Model
@@ -121,42 +165,58 @@ with app.app_context():
 #  Load Trained Model
 # ═════════════════════════════════════════════════════════════════
 
-print("MindNest AI Server -- Loading model...")
+# ═════════════════════════════════════════════════════════════════
+#  Load Trained Model
+# ═════════════════════════════════════════════════════════════════
+
+app_logger.info("Loading emotion classification model...")
+
+MODEL_PATH = app.config['MODEL_PATH']
+GEMINI_API_KEY = app.config['GEMINI_API_KEY']
+GEMINI_MODEL = app.config['GEMINI_MODEL']
 
 if not os.path.exists(MODEL_PATH):
-    print("[Error] Model not found! Run 'python train_model.py' first.")
-    print(f"   Expected path: {MODEL_PATH}")
-    exit(1)
+    app_logger.error(f"Model not found at {MODEL_PATH}")
+    app_logger.error("Run 'python train_model.py' first")
+    raise FileNotFoundError(f"Model required: {MODEL_PATH}")
 
-model_data = joblib.load(MODEL_PATH)
-pipeline = model_data["pipeline"]
-model_classes = model_data["classes"]
-model_accuracy = model_data.get("accuracy", 0)
-model_type = model_data.get("model_type", "Unknown")
-label_encoder = model_data.get("label_encoder", None)  # New: for int→string decoding
-
-print(f"[Success] Model loaded successfully!")
-print(f"   Type: {model_type}")
-print(f"   Classes: {model_classes}")
-print(f"   Accuracy: {model_accuracy:.2%}")
-print(f"   Label Encoder: {'✅' if label_encoder else '❌ (legacy model)'}")
+try:
+    model_data = joblib.load(MODEL_PATH)
+    pipeline = model_data["pipeline"]
+    model_classes = model_data["classes"]
+    model_accuracy = model_data.get("accuracy", 0)
+    model_type = model_data.get("model_type", "Unknown")
+    label_encoder = model_data.get("label_encoder", None)
+    
+    app_logger.info(f"✅ Model loaded successfully!")
+    app_logger.info(f"   Type: {model_type}")
+    app_logger.info(f"   Classes: {model_classes}")
+    app_logger.info(f"   Accuracy: {model_accuracy:.2%}")
+except Exception as e:
+    app_logger.error(f"Failed to load model: {e}")
+    raise
 
 # ─── RAG Engine ─────────────────────────────────────────────────
-print("\nInitializing RAG Engine...")
-rag_engine = RAGEngine()
-print(f"   RAG Status: {'✅ Ready' if rag_engine.ready else '❌ Not available'}")
+app_logger.info("Initializing RAG Engine...")
+try:
+    rag_engine = RAGEngine()
+    app_logger.info(f"✅ RAG Engine ready: {len(rag_engine.documents)} documents indexed")
+except Exception as e:
+    app_logger.warning(f"RAG Engine initialization failed: {e}")
+    rag_engine = None
 
-print("\nInitializing Gemini GenAI...")
+# ─── Gemini GenAI ───────────────────────────────────────────────
+app_logger.info("Initializing Gemini GenAI...")
 gemini_client = None
 if genai and GEMINI_API_KEY:
     try:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-        print(f"   Gemini Status: ✅ Ready ({GEMINI_MODEL})")
-    except Exception as exc:
-        print(f"   Gemini Status: ❌ Failed to initialize ({exc})")
+        app_logger.info(f"✅ Gemini Status: Ready ({GEMINI_MODEL})")
+    except Exception as e:
+        app_logger.warning(f"Gemini initialization failed: {e}")
 else:
     reason = "package missing" if not genai else "API key missing"
-    print(f"   Gemini Status: ❌ Unavailable ({reason})")
+    app_logger.warning(f"Gemini unavailable: {reason}")
 
 # ═════════════════════════════════════════════════════════════════
 #  Text Preprocessing (same as training)
@@ -486,217 +546,298 @@ def create_entry():
 @app.route("/api/health", methods=["GET"])
 def health_check():
     """Health check endpoint — verifies server and model are running."""
-    return jsonify({
-        "status": "healthy",
-        "model_loaded": True,
-        "model_type": model_type,
-        "model_accuracy": round(model_accuracy * 100, 1),
-        "classes": model_classes,
-        "vad_enabled": True,
-        "rag_enabled": rag_engine.ready,
-        "rag_documents": len(rag_engine.documents),
-        "gemini_enabled": gemini_client is not None,
-        "gemini_model": GEMINI_MODEL if gemini_client else None,
-    })
+    try:
+        return jsonify({
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "environment": app.config['FLASK_ENV'],
+            "model_loaded": True,
+            "model_type": model_type,
+            "model_accuracy": round(model_accuracy * 100, 1),
+            "classes": list(model_classes),
+            "vad_enabled": True,
+            "rag_enabled": rag_engine is not None,
+            "rag_documents": len(rag_engine.documents) if rag_engine else 0,
+            "gemini_enabled": gemini_client is not None,
+            "gemini_model": GEMINI_MODEL if gemini_client else None,
+        }), 200
+    except Exception as e:
+        app_logger.error(f"Health check failed: {e}")
+        return jsonify({
+            "status": "unhealthy",
+            "error": str(e)
+        }), 500
 
 
 @app.route("/api/model-info", methods=["GET"])
 def model_info():
     """Return metadata about the trained model."""
-    arch = model_data.get("architecture", {})
-    return jsonify({
-        "model_type": model_type,
-        "classes": model_classes,
-        "accuracy": round(model_accuracy * 100, 1),
-        "features": "TF-IDF (5000 max, unigrams + bigrams)",
-        "preprocessing": "Lowercase → Clean → Tokenize → Remove stopwords → Lemmatize",
-        "framework": "scikit-learn (MLPClassifier)",
-        "activation": "Sigmoid (logistic)",
-        "architecture": arch,
-        "vad_scoring": "NRC VAD Lexicon + Sigmoid positivity transform",
-    })
+    try:
+        arch = model_data.get("architecture", {})
+        return jsonify({
+            "model_type": model_type,
+            "classes": list(model_classes),
+            "accuracy": round(model_accuracy * 100, 1),
+            "features": "TF-IDF (5000 max, unigrams + bigrams)",
+            "preprocessing": "Lowercase → Clean → Tokenize → Remove stopwords → Lemmatize",
+            "framework": "scikit-learn (MLPClassifier)",
+            "activation": "Sigmoid (logistic)",
+            "architecture": arch,
+            "vad_scoring": "NRC VAD Lexicon + Sigmoid positivity transform",
+        }), 200
+    except Exception as e:
+        app_logger.error(f"Model info retrieval failed: {e}")
+        raise APIError("Failed to retrieve model information", 500, "MODEL_INFO_ERROR")
 
 
 @app.route("/api/analyze", methods=["POST"])
+@limiter.limit("30 per minute")
 def analyze_mood():
     """
     Main AI endpoint — analyzes journal text and returns:
     - MLP Neural Network emotion prediction (sigmoid activation)
     - NRC VAD Lexicon scores (Valence, Arousal, Dominance)
     - Sigmoid-derived positivity score
-    """
-    data = request.get_json()
-
-    if not data:
-        return jsonify({"error": "No JSON body provided"}), 400
-
-    text = data.get("text", "").strip()
-    selected_mood = data.get("selectedMood", None)
-
-    # If no text, fall back to the selected mood
-    if not text and not selected_mood:
-        return jsonify({"error": "Provide 'text' or 'selectedMood'"}), 400
-
-    if text:
-        # ── AI Prediction (MLP with sigmoid) ──
-        clean_text = preprocess_text(text)
-        pred_raw = pipeline.predict([clean_text])[0]
-        probabilities = pipeline.predict_proba([clean_text])[0]
-        confidence = float(max(probabilities)) * 100
-
-        # Decode prediction: label_encoder maps int→string
-        if label_encoder is not None:
-            prediction = label_encoder.inverse_transform([pred_raw])[0]
-        else:
-            prediction = str(pred_raw)  # Legacy model returns strings directly
-
-        # Build probability map
-        all_probs = {}
-        for cls_idx, prob in enumerate(probabilities):
-            if label_encoder is not None:
-                cls_name = label_encoder.inverse_transform([cls_idx])[0]
-            else:
-                cls_name = str(pipeline.classes_[cls_idx])
-            all_probs[cls_name] = round(float(prob) * 100, 1)
-
-        detected = prediction
-
-        # If user selected a mood AND the AI confidence is low, blend
-        if selected_mood and confidence < 45:
-            detected = selected_mood
-
-        # ── VAD Scoring (NRC Lexicon) ──
-        vad = compute_vad(text)
-        vad_labels = vad_summary(vad)
-
-        # ── Positivity via Sigmoid transform of VAD ──
-        positivity = positivity_from_vad(vad)
-
-        # ── Stress from VAD ──
-        stress = stress_from_vad(vad)
-    else:
-        # No text — use the selected mood directly
-        detected = selected_mood
-        confidence = 100.0
-        all_probs = {m: 0 for m in model_classes}
-        all_probs[detected] = 100.0
-        vad = {"valence": 0.5, "arousal": 0.5, "dominance": 0.5,
-               "matched_words": 0, "total_words": 0}
-        vad_labels = {"valenceLabel": "Neutral", "arousalLabel": "Moderate",
-                      "dominanceLabel": "Moderate"}
-        meta = MOOD_META.get(detected, MOOD_META["calm"])
-        jitter = random.randint(-7, 7)
-        positivity = max(5, min(98, meta["positivityBase"] + jitter))
-        stress = STRESS_LEVELS.get(detected, "Moderate")
-
-    # ── Build response ──
-    meta = MOOD_META.get(detected, MOOD_META["calm"])
-
-    insight_pool = INSIGHTS.get(detected, INSIGHTS["calm"])
-    insight = random.choice(insight_pool)
-
-    # ── RAG: Retrieve relevant context ──
-    rag_context = rag_engine.get_augmented_response(
-        query_text=text or "",
-        detected_emotion=detected,
-        top_k=2,
-    )
-
-    response = {
-        "mood": detected,
-        "moodLabel": meta["label"],
-        "emoji": meta["emoji"],
-        "color": meta["color"],
-        "positivity": round(positivity),
-        "stressLevel": stress,
-        "insight": insight,
-        "suggestions": SUGGESTIONS.get(detected, SUGGESTIONS["calm"]),
-        "confidence": round(confidence, 1),
-        "allProbabilities": all_probs,
-        "aiPowered": True,
-        # ── VAD Scores ──
-        "vad": {
-            "valence": vad["valence"],
-            "arousal": vad["arousal"],
-            "dominance": vad["dominance"],
-            "matchedWords": vad["matched_words"],
-            "totalWords": vad["total_words"],
-            **vad_labels,
-        },
-        # ── RAG Context ──
-        "rag": rag_context,
+    
+    Request body:
+    {
+        "text": "Journal entry text...",
+        "selectedMood": "happy" (optional)
     }
+    """
+    try:
+        data = request.get_json()
 
-    return jsonify(response)
+        if not data:
+            raise APIError("No JSON body provided", 400, "MISSING_BODY")
+
+        text = (data.get("text") or "").strip()
+        selected_mood = data.get("selectedMood")
+
+        # If no text, fall back to the selected mood
+        if not text and not selected_mood:
+            raise APIError(
+                "Provide either 'text' or 'selectedMood'",
+                400,
+                "MISSING_INPUT"
+            )
+
+        app_logger.debug(f"Analyzing mood - text length: {len(text)}, selected: {selected_mood}")
+
+        if text:
+            # ── AI Prediction (MLP with sigmoid) ──
+            clean_text = preprocess_text(text)
+            pred_raw = pipeline.predict([clean_text])[0]
+            probabilities = pipeline.predict_proba([clean_text])[0]
+            confidence = float(max(probabilities)) * 100
+
+            # Decode prediction: label_encoder maps int→string
+            if label_encoder is not None:
+                prediction = label_encoder.inverse_transform([pred_raw])[0]
+            else:
+                prediction = str(pred_raw)  # Legacy model returns strings directly
+
+            # Build probability map
+            all_probs = {}
+            for cls_idx, prob in enumerate(probabilities):
+                if label_encoder is not None:
+                    cls_name = label_encoder.inverse_transform([cls_idx])[0]
+                else:
+                    cls_name = str(pipeline.classes_[cls_idx])
+                all_probs[cls_name] = round(float(prob) * 100, 1)
+
+            detected = prediction
+
+            # If user selected a mood AND the AI confidence is low, blend
+            if selected_mood and confidence < 45:
+                app_logger.debug(f"Low confidence ({confidence}%) - using selected mood: {selected_mood}")
+                detected = selected_mood
+
+            # ── VAD Scoring (NRC Lexicon) ──
+            vad = compute_vad(text)
+            vad_labels = vad_summary(vad)
+
+            # ── Positivity via Sigmoid transform of VAD ──
+            positivity = positivity_from_vad(vad)
+
+            # ── Stress from VAD ──
+            stress = stress_from_vad(vad)
+        else:
+            # No text — use the selected mood directly
+            detected = selected_mood
+            confidence = 100.0
+            all_probs = {m: 0 for m in model_classes}
+            all_probs[detected] = 100.0
+            vad = {"valence": 0.5, "arousal": 0.5, "dominance": 0.5,
+                   "matched_words": 0, "total_words": 0}
+            vad_labels = {"valenceLabel": "Neutral", "arousalLabel": "Moderate",
+                          "dominanceLabel": "Moderate"}
+            meta = MOOD_META.get(detected, MOOD_META["calm"])
+            jitter = random.randint(-7, 7)
+            positivity = max(5, min(98, meta["positivityBase"] + jitter))
+            stress = STRESS_LEVELS.get(detected, "Moderate")
+
+        # ── Build response ──
+        meta = MOOD_META.get(detected, MOOD_META["calm"])
+
+        insight_pool = INSIGHTS.get(detected, INSIGHTS["calm"])
+        insight = random.choice(insight_pool)
+
+        # ── RAG: Retrieve relevant context ──
+        rag_context = {}
+        if rag_engine:
+            try:
+                rag_context = rag_engine.get_augmented_response(
+                    query_text=text or "",
+                    detected_emotion=detected,
+                    top_k=2,
+                )
+            except Exception as e:
+                app_logger.warning(f"RAG retrieval failed: {e}")
+                rag_context = {}
+
+        response = {
+            "mood": detected,
+            "moodLabel": meta["label"],
+            "emoji": meta["emoji"],
+            "color": meta["color"],
+            "positivity": round(positivity),
+            "stressLevel": stress,
+            "insight": insight,
+            "suggestions": SUGGESTIONS.get(detected, SUGGESTIONS["calm"]),
+            "confidence": round(confidence, 1),
+            "allProbabilities": all_probs,
+            "aiPowered": True,
+            # ── VAD Scores ──
+            "vad": {
+                "valence": vad["valence"],
+                "arousal": vad["arousal"],
+                "dominance": vad["dominance"],
+                "matchedWords": vad["matched_words"],
+                "totalWords": vad["total_words"],
+                **vad_labels,
+            },
+            # ── RAG Context ──
+            "rag": rag_context,
+        }
+
+        app_logger.info(f"Analysis complete: {detected} (confidence: {confidence}%)")
+        return jsonify(response), 200
+        
+    except Exception as e:
+        app_logger.error(f"Mood analysis failed: {e}", exc_info=True)
+        raise APIError(f"Failed to analyze mood: {str(e)}", 500, "ANALYSIS_ERROR")
 
 
 @app.route("/api/rag-query", methods=["POST"])
+@limiter.limit("20 per minute")
 def rag_query():
     """Direct RAG query endpoint — retrieve knowledge by topic."""
-    data = request.get_json()
-    if not data or not data.get("query"):
-        return jsonify({"error": "Provide a 'query' field"}), 400
+    try:
+        data = request.get_json()
+        if not data or not data.get("query"):
+            raise APIError(
+                "Provide a 'query' field",
+                400,
+                "MISSING_QUERY"
+            )
 
-    query_text = data["query"]
-    emotion = data.get("emotion", None)
-    top_k = min(data.get("top_k", 3), 5)  # Cap at 5
+        if not rag_engine:
+            raise APIError(
+                "RAG engine not available",
+                503,
+                "RAG_UNAVAILABLE"
+            )
 
-    results = rag_engine.retrieve(query_text, emotion, top_k=top_k)
+        query_text = data["query"]
+        emotion = data.get("emotion")
+        top_k = min(data.get("top_k", 3), 5)  # Cap at 5
 
-    return jsonify({
-        "query": query_text,
-        "emotion": emotion,
-        "results": results,
-        "totalDocuments": len(rag_engine.documents),
-    })
+        app_logger.debug(f"RAG query: {query_text[:100]}")
+        results = rag_engine.retrieve(query_text, emotion, top_k=top_k)
+
+        return jsonify({
+            "query": query_text,
+            "emotion": emotion,
+            "results": results,
+            "totalDocuments": len(rag_engine.documents),
+        }), 200
+        
+    except Exception as e:
+        app_logger.error(f"RAG query failed: {e}", exc_info=True)
+        raise APIError(f"RAG query failed: {str(e)}", 500, "RAG_QUERY_ERROR")
 
 
 @app.route("/api/wellness-chat", methods=["POST"])
+@limiter.limit("30 per minute")
 def wellness_chat():
     """Gemini-backed wellness assistant chat endpoint."""
-    data = request.get_json()
-    if not data or not data.get("message", "").strip():
-        return jsonify({"error": "Provide a non-empty 'message' field"}), 400
+    try:
+        data = request.get_json()
+        if not data:
+            raise APIError("No JSON body provided", 400, "MISSING_BODY")
+            
+        message = (data.get("message") or "").strip()
+        if not message:
+            raise APIError(
+                "Provide a non-empty 'message' field",
+                400,
+                "MISSING_MESSAGE"
+            )
 
-    reply, ai_powered, provider = generate_wellness_reply(
-        message=data["message"].strip(),
-        history=data.get("history", []),
-        user_name=(data.get("userName") or "Friend").strip() or "Friend",
-    )
+        app_logger.debug(f"Wellness chat: {message[:100]}")
+        
+        reply, ai_powered, provider = generate_wellness_reply(
+            message=message,
+            history=data.get("history", []),
+            user_name=(data.get("userName") or "Friend").strip() or "Friend",
+        )
 
-    return jsonify({
-        "reply": reply,
-        "aiPowered": ai_powered,
-        "provider": provider,
-    })
+        return jsonify({
+            "reply": reply,
+            "aiPowered": ai_powered,
+            "provider": provider,
+        }), 200
+        
+    except Exception as e:
+        app_logger.error(f"Wellness chat failed: {e}", exc_info=True)
+        raise APIError(f"Wellness chat failed: {str(e)}", 500, "WELLNESS_CHAT_ERROR")
 
 
 # ═════════════════════════════════════════════════════════════════
-#  Start Server
+#  Start Server (Production-Ready)
 # ═════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
-    print("\n" + "=" * 50)
-    print("  MindNest AI Server")
-    print(f"  Model: {model_type}")
-    print("  VAD Scoring: NRC Lexicon + Sigmoid")
-    print(f"  RAG Engine: {'✅ Active' if rag_engine.ready else '❌ Inactive'} ({len(rag_engine.documents)} docs)")
-    print(f"  Gemini Chat: {'✅ Active' if gemini_client else '❌ Inactive'}")
-    print("  http://localhost:5000")
-    print("  CORS enabled for React frontend")
-    print("=" * 50 + "\n")
+    port = int(os.environ.get("PORT", 5000))
+    
+    app_logger.info("\n" + "=" * 60)
+    app_logger.info("  🚀 MindNest AI Server — Starting")
+    app_logger.info("=" * 60)
+    app_logger.info(f"  Environment: {app.config['FLASK_ENV'].upper()}")
+    app_logger.info(f"  Model: {model_type} (Accuracy: {model_accuracy:.2%})")
+    app_logger.info(f"  VAD Scoring: NRC Lexicon (Sigmoid positivity)")
+    app_logger.info(f"  RAG Engine: {'✅ Active' if rag_engine else '❌ Inactive'} ({len(rag_engine.documents) if rag_engine else 0} docs)")
+    app_logger.info(f"  Gemini Chat: {'✅ Active' if gemini_client else '❌ Inactive'} ({GEMINI_MODEL if gemini_client else 'N/A'})")
+    app_logger.info(f"  Rate Limiting: {'✅ Enabled' if app.config['RATELIMIT_ENABLED'] else '❌ Disabled'}")
+    app_logger.info(f"  Database: {app.config['SQLALCHEMY_DATABASE_URI'].split('/')[-1]}")
+    app_logger.info(f"  CORS Origins: {', '.join(app.config['CORS_ORIGINS'])}")
+    app_logger.info(f"  Server: http://localhost:{port}")
+    app_logger.info("=" * 60 + "\n")
 
     # Use Waitress (production WSGI server) by default
     try:
         from waitress import serve
-        print("  🚀 Starting Waitress WSGI server on port 5000...")
-        serve(app, host="0.0.0.0", port=5000, threads=4)
+        app_logger.info(f"🚀 Starting Waitress WSGI server on port {port}...")
+        app_logger.info("   (Use gunicorn for production: gunicorn --config gunicorn_config.py wsgi:app)\n")
+        serve(app, host="0.0.0.0", port=port, threads=4)
     except ImportError:
-        print("  ⚠️  Waitress not installed — using Flask dev server.")
-        print("  Install with: pip install waitress")
+        app_logger.warning("⚠️  Waitress not installed — falling back to Flask dev server")
+        app_logger.warning("   Install with: pip install waitress\n")
         app.run(
             host="0.0.0.0",
-            port=5000,
-            debug=True,
+            port=port,
+            debug=app.config['DEBUG'],
             use_reloader=False,
         )
+
