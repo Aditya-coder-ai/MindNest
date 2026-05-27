@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: mindnest-backend
+    runtime: python
+    rootDir: ai-backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --config gunicorn_config.py wsgi:app
+    healthCheckPath: /api/health
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: 3.11.12
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://mindnest-de930.web.app,http://localhost:5173

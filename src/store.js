@@ -13,8 +13,8 @@ const STORAGE_KEY = 'mindnest_entries';
 const NAME_KEY = 'mindnest_user_name';
 
 /* ─── AI Backend config ─── */
-// Railway cloud URL (live 24/7) — override with VITE_API_URL for local dev
-const AI_API_URL = import.meta.env.VITE_API_URL || 'https://mindnest-backend-production.up.railway.app/api';
+// Render cloud URL (live 24/7) — override with VITE_API_URL for local dev
+const AI_API_URL = import.meta.env.VITE_API_URL || 'https://mindnest-backend.onrender.com/api';
 let _aiAvailable = null; // null = unknown, true/false = checked
 
 /**
