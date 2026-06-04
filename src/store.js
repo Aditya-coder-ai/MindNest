@@ -14,7 +14,7 @@ const NAME_KEY = 'mindnest_user_name';
 
 /* ─── AI Backend config ─── */
 // Render cloud URL (live 24/7) — override with VITE_API_URL for local dev
-const AI_API_URL = import.meta.env.VITE_API_URL || 'https://mindnest-backend.onrender.com/api';
+const AI_API_URL = import.meta.env.VITE_API_URL || 'https://mindnest-backend-9jda.onrender.com/api';
 let _aiAvailable = null; // null = unknown, true/false = checked
 
 /**
