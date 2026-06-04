@@ -42,8 +42,3 @@ ssl_version = 2
 cert_reqs = 0
 ca_certs = None
 
-# Application
-paste = None
-on_starting = None
-when_ready = None
-on_exit = None

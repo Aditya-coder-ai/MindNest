@@ -26,10 +26,17 @@ import re
 import sys
 
 # ─── UTF-8 Encoding ─────────────────────────────────────────────
-if sys.stdout.encoding.lower() != 'utf-8':
-    sys.stdout.reconfigure(encoding='utf-8')
-if sys.stderr.encoding.lower() != 'utf-8':
-    sys.stderr.reconfigure(encoding='utf-8')
+if (getattr(sys.stdout, 'encoding', None) or '').lower() != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+if (getattr(sys.stderr, 'encoding', None) or '').lower() != 'utf-8':
+    try:
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 
 # ─── Environment & Configuration ────────────────────────────────
 from dotenv import load_dotenv
