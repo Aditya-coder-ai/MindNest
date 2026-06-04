@@ -128,7 +128,7 @@ export function getUserJoinDate() {
 export async function checkAIAvailable() {
   if (_aiAvailable !== null) return _aiAvailable;
   try {
-    const res = await fetch(`${AI_API_URL}/health`, { signal: AbortSignal.timeout(2000) });
+    const res = await fetch(`${AI_API_URL}/health`, { signal: AbortSignal.timeout(8000) });
     const data = await res.json();
     _aiAvailable = data.status === 'healthy';
     console.log(`🌿 AI Backend: ${_aiAvailable ? '✅ Connected' : '❌ Unavailable'}`);
