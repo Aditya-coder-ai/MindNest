@@ -3,8 +3,8 @@ services:
     name: mindnest-backend
     runtime: python
     rootDir: ai-backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --config gunicorn_config.py wsgi:app
+    buildCommand: pip install -r requirements.txt && python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('stopwords'); nltk.download('wordnet')"
+    startCommand: gunicorn --config gunicorn_config.py --preload wsgi:app
     healthCheckPath: /api/health
     envVars:
       - key: FLASK_ENV
